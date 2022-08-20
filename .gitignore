@@ -1,0 +1,6 @@
+# Appletree
+node_modules
+dist
+.env
+# Eden
+eden/target
