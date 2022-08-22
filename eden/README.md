@@ -9,3 +9,11 @@ If you want to run it on your localhost, you can use `curl` to send some request
 curl --header "Content-Type: application/json" --request POST --data '{"username":"xyz","password":"xyz"}' http://localhost:8080/db/quote/draw
 ```
 (I am really just making a note of this because this happens to be the `curl` command with arbitrary data that I am using to test the application!)
+
+```
+curl --header "Content-Type: application/json" --request POST --data '{"quote":"said something", "quotee":"2392734093", "quoter":"2734982374", "qweight":0.5}' http://localhost:8080/db/quote/add
+```
+
+```
+curl --header "Content-Type: application/json" --request POST --data '{"qsubstr": "est"}' http://localhost:8080/db/quote/find
+```

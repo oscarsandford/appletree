@@ -21,7 +21,7 @@ fn handle(buf: &mut [u8]) {
 
 	let res_json: serde_json::Value = match path {
 		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
-		"/db/quote/find" => db.quote_find(body_json["qsubstr"].to_string()).unwrap_or(json!({"status":"500"})),
+		"/db/quote/find" => db.quote_find(body_json["query"].to_string()).unwrap_or(json!({"status":"500"})),
 		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
 		// "/db/quote/remove" => {},
 		_ => {json!({"status":"404"})},

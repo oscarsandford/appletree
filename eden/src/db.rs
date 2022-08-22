@@ -47,17 +47,20 @@ impl SQLdb {
 		};
 
 		Ok(json!({
-			"status" : "OK",
+			"status" : "200",
 			"quote" : quote.quote,
-			"quotee" : quote.quotee
+			"quotee" : quote.quotee,
+			"quoter" : quote.quoter,
+			"qweight" : quote.qweight
 		}))
 	}
 
-	pub fn quote_find(&self, qsubstr: String) -> Result<Value, Box<dyn std::error::Error>> {
-		let substr = qsubstr.replace("\\", "").replace("\"", "");
+	pub fn quote_find(&self, query_st: String) -> Result<Value, Box<dyn std::error::Error>> {
+		// Make the substring lowercase so that we are matching case in the query.
+		let quote_subst = query_st.replace("\\", "").replace("\"", "").to_lowercase();
 
 		// This is super bad, but I cannot figure out how to format the query params otherwise. Fix later.
-		let query = format!("SELECT * FROM quotes WHERE quote LIKE '%{}%' LIMIT 1", substr);
+		let query = format!("SELECT * FROM quotes WHERE LOWER(quote) LIKE '%{}%' LIMIT 1", quote_subst);
 
 		let mut stmt = self.conn.prepare(&query)?;
 		let retrieved_quotes = stmt.query_map([], |row| {
@@ -80,7 +83,9 @@ impl SQLdb {
 			Ok(json!({
 				"status" : "200",
 				"quote" : &quotes[0].quote,
-				"quotee" : &quotes[0].quotee
+				"quotee" : &quotes[0].quotee,
+				"quoter" : quote.quoter,
+				"qweight" : quote.qweight
 			}))
 		}
 	}

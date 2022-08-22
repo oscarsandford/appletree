@@ -25,6 +25,14 @@ export interface TarotCard {
 	deck: string
 }
 
+export interface Quote {
+	status: string,
+	quote: string,
+	quotee: string,
+	quoter: string,
+	qweight: string
+}
+
 
 export function draw_trading_card(): TradingCard {
 	let rand_rank = random_index_weighted(card_weights);
