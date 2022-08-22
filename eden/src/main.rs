@@ -23,9 +23,9 @@ fn handle(buf: &mut [u8]) {
 	// println!("\nbody: {:?}\npath: {:?}", body_json, path);
 
 	let res_json: serde_json::Value = match path {
-		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({})),
-		// "/db/quote/find" => {},
-		// "/db/quote/add" => {},
+		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"ERR"})),
+		"/db/quote/find" => db.quote_find(body_json["qsubstr"]).unwrap_or(json!({"status":"ERR"})),
+		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"ERR"})),
 		// "/db/quote/remove" => {},
 		_ => {json!({})},
 	};
