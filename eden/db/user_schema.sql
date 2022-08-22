@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS quotes (
-    id INTEGER PRIMARY KEY,
     quote TEXT NOT NULL,
     quotee CHAR(20) NOT NULL,
     quoter CHAR(20) DEFAULT "?",
-    qweight REAL DEFAULT 0.5
+    qweight REAL DEFAULT 0.5,
+    PRIMARY KEY (quote, quotee)
 );
 
 CREATE TABLE IF NOT EXISTS cards (
@@ -17,5 +17,5 @@ CREATE TABLE IF NOT EXISTS cards (
     cdeck TEXT DEFAULT "unknown"
 );
 
-INSERT INTO quotes VALUES (0, "testing quote", "2348239423097", "82370945237904", 0.3);
-INSERT INTO quotes VALUES (1, "another funny quote", "328463928", "32487293432", 0.7);
+INSERT INTO quotes VALUES ("testing quote", "2348239423097", "82370945237904", 0.3);
+INSERT INTO quotes VALUES ("another funny quote", "328463928", "32487293432", 0.7);

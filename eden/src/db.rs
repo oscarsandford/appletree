@@ -1,9 +1,10 @@
 use rusqlite::{Connection, Result, Error, params};
+use serde::Deserialize;
 use serde_json::{json, Value};
-use rand::{thread_rng, Rng, distributions::WeightedIndex, distributions::Distribution};
+use rand::{thread_rng, distributions::WeightedIndex, distributions::Distribution};
 
+#[derive(Deserialize, Debug)]
 struct Quote {
-	id: u16,
 	quote: String,
 	quotee: String,
 	quoter: String,
@@ -24,11 +25,10 @@ impl SQLdb {
 		let mut stmt = self.conn.prepare("SELECT * FROM quotes")?;
 		let retrieved_quotes = stmt.query_map([], |row| {
 			Ok(Quote {
-				id: row.get(0)?,
-				quote: row.get(1)?,
-				quotee: row.get(2)?,
-				quoter: row.get(3)?,
-				qweight: row.get(4)?,
+				quote: row.get(0)?,
+				quotee: row.get(1)?,
+				quoter: row.get(2)?,
+				qweight: row.get(3)?,
 			})
 		})?;
 		let mut quotes = Vec::new();
@@ -42,8 +42,7 @@ impl SQLdb {
 		let quote = &quotes[ridx];
 
 		// Reduce the weight of the randomly selected quote, so it is less likely to be pulled next.
-		// TODO: Do we need to sanitize, or is this safe?
-		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE id = ?1", params![quote.id]) {
+		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE quote = ?1", params![quote.quote]) {
 			println!("[Eden] Updated {} rows.", n);
 		};
 
@@ -55,32 +54,45 @@ impl SQLdb {
 	}
 
 	pub fn quote_find(&self, qsubstr: String) -> Result<Value, Box<dyn std::error::Error>> {
-		let mut stmt = self.conn.prepare("SELECT * FROM quotes WHERE quote LIKE '%?%' LIMIT 1")?;
-		let quote = stmt.query_and_then([qsubstr], |row| {
-			Ok(Quote {
-				id: row.get(0)?,
-				quote: row.get(1)?,
-				quotee: row.get(2)?,
-				quoter: row.get(3)?,
-				qweight: row.get(4)?,
-			})
-		})?.next()??;
+		let substr = qsubstr.replace("\\", "").replace("\"", "");
 
-		// TODO: maybe we want to send back the quote id? Since it could be a good unique identifier for removing quotes.
-		Ok(json!({
-			"status" : "OK",
-			"quote" : quote.quote,
-			"quotee" : quote.quotee
-		}))
+		// This is super bad, but I cannot figure out how to format the query params otherwise. Fix later.
+		let query = format!("SELECT * FROM quotes WHERE quote LIKE '%{}%' LIMIT 1", substr);
+
+		let mut stmt = self.conn.prepare(&query)?;
+		let retrieved_quotes = stmt.query_map([], |row| {
+			Ok(Quote {
+				quote: row.get(0)?,
+				quotee: row.get(1)?,
+				quoter: row.get(2)?,
+				qweight: row.get(3)?,
+			})
+		})?;
+		
+		let mut quotes = Vec::new();
+		for q in retrieved_quotes {
+			quotes.push(q?);
+		}
+		if quotes.len() == 0 {
+			Ok(json!({ "status" : "204" }))
+		}
+		else {
+			Ok(json!({
+				"status" : "200",
+				"quote" : &quotes[0].quote,
+				"quotee" : &quotes[0].quotee
+			}))
+		}
 	}
 
 	pub fn quote_add(&self, qjson: Value) -> Result<Value, Box<dyn std::error::Error>> {
 		let quote: Quote = serde_json::from_value(qjson)?;
-		let n = self.conn.execute("INSERT INTO quotes (quote, quotee, quoter, qweight", 
+		println!("[Eden:quotes] Adding {:?}", &quote);
+		let n = self.conn.execute("INSERT INTO quotes (quote, quotee, quoter, qweight) VALUES (?1, ?2, ?3, ?4)", 
 			(&quote.quote, &quote.quotee, &quote.quoter, &quote.qweight)
 		)?;
-		println!("[Eden] Updated {} rows.", n);
-		Ok(json!({ "status" : "OK" }))
+		println!("[Eden:quotes] Updated {} rows.", n);
+		Ok(json!({ "status" : "200" }))
 	}
 
 	// pub fn quote_remove(&self, qsubstr: String) -> Result<Value, Box<dyn std::error::Error>> {

@@ -19,15 +19,12 @@ fn handle(buf: &mut [u8]) {
 	// TODO: ideally, we can make use of this db connection multiple times.
 	let db = SQLdb::new("./db/user.db").unwrap(); // Fix this unwrap
 
-	// println!("\nbuf: {:?}", buflns);
-	// println!("\nbody: {:?}\npath: {:?}", body_json, path);
-
 	let res_json: serde_json::Value = match path {
-		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"ERR"})),
-		"/db/quote/find" => db.quote_find(body_json["qsubstr"]).unwrap_or(json!({"status":"ERR"})),
-		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"ERR"})),
+		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
+		"/db/quote/find" => db.quote_find(body_json["qsubstr"].to_string()).unwrap_or(json!({"status":"500"})),
+		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
 		// "/db/quote/remove" => {},
-		_ => {json!({})},
+		_ => {json!({"status":"404"})},
 	};
 	println!("res(json): {:?}", res_json);
 

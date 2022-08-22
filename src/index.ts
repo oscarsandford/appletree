@@ -41,5 +41,21 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			await interaction.reply({embeds : [tarot_card_embed]});
 			set_cooldown(interaction.user.id, recently_drawn.tarot, 600000);
 			break;
+
+		case "quote":
+			// Draw quote. Interface with Eden.
+			break;
+
+		case "addquote":
+			// Add quote. Interface with Eden.
+			break;
+
+		case "findquote":
+			// Add quote. Interface with Eden.
+			break;
+
+		case "unquote":
+			// Add quote. Interface with Eden.
+			break;
 	}
 });
