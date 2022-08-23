@@ -84,8 +84,8 @@ impl SQLdb {
 				"status" : "200",
 				"quote" : &quotes[0].quote,
 				"quotee" : &quotes[0].quotee,
-				"quoter" : quote.quoter,
-				"qweight" : quote.qweight
+				"quoter" : &quotes[0].quoter,
+				"qweight" : &quotes[0].qweight
 			}))
 		}
 	}

@@ -46,25 +46,14 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 		} break;
 
 		case "quote": {
-			// Draw quote. Interface with Eden.
-			/*
-			Request body: { } (arbitrary)
-			Response body:
-			{
-				"status" : "200" or "500",
-				"quote" : str,
-				"quotee" : str,
-				"qweight" : number
-			}
-			*/
-
 			const res = await fetch("http://localhost:8080/db/quote/draw", {
-				method : "GET",
+				method : "POST",
 				headers : { "Content-Type" : "application/json" },
-				body : JSON.stringify({})
+				body: JSON.stringify({})
 			});
-			const json = await res.json();
-			if (json["status"] !== "200") {
+			const json = (await res.json()) as any; // Hacky! Replace with a better workaround later. 
+				// source: https://github.com/node-fetch/node-fetch/issues/1262#issuecomment-910417511
+			if (json["status"] && json["status"] !== "200") {
 				return;
 			}
 			const quote: Quote = JSON.parse(json);
@@ -74,20 +63,6 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 		} break;
 
 		case "addquote": {
-			// Add quote. Interface with Eden.
-			/*
-			Request body:
-			{
-				"quote" : "the quote itself",
-				"quotee" : "the discord id of the quotee",
-				"quoter" : "the discord id of the user who added the quote",
-				"qweight" : 0.5
-			}
-			Response body:
-			{
-				"status" : "200" or "500"
-			}
-			*/
 			const quote = interaction.options.get("quote")?.value;
 			const quotee = interaction.options.get("user")?.user;
 			// Avoid sending bad data.
@@ -100,48 +75,33 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				"qweight" : 0.5
 			};
 
-			const res: Response = await fetch("http://localhost:8080/db/quote/add", {
+			const res = await fetch("http://localhost:8080/db/quote/add", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify(body)
 			});
-			const json = await res.json();
-			if (json["status"] === "200") {
+			const json = (await res.json()) as any;
+			if (json["status"] && json["status"] === "200") {
 				await interaction.reply({ content : `${interaction.user} added a quote from ${quotee} to the database.` });
 			}
 		} break;
 
 		case "findquote": {
-			// Find quote. Interface with Eden.
-			/*
-			Request body:
-			{
-				"query" : "a substring of the quote desired"
-			}
-			Response body:
-			{
-				"status" : "200" or "204" or "500",
-				"quote" : "the quote itself",
-				"quotee" : "the discord id of the quotee",
-				"quoter" : "the discord id of the user who added the quote",
-				"qweight" : 0.5
-			}
-			*/
 			const query = interaction.options.get("text")?.value;
 			if (typeof query !== "string") return;
 
-			const res: Response = await fetch("http://localhost:8080/db/quote/find", {
-				method : "GET",
+			const res = await fetch("http://localhost:8080/db/quote/find", {
+				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : query })
 			});
-			const json = await res.json();
+			const json = (await res.json()) as any;
 
-			if (json["status"] === "200") {
+			if (json["status"] && json["status"] === "200") {
 				const quote: Quote = JSON.parse(json);
 				const display_name: string = await get_username(client, interaction.guild, quote.quotee);
 				await interaction.reply({ content: `> ${quote.quote}\n —${display_name}` });
-			} else if (json["status"] === "204") {
+			} else if (json["status"] && json["status"] === "204") {
 				await interaction.reply({content: "No matching quote found.", ephemeral: true});
 			}
 		} break;
