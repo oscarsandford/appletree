@@ -22,6 +22,7 @@ client.on("ready", () => {
 
 client.on("interactionCreate", async (interaction: Interaction) => {
 	if (!interaction.isCommand()) return;
+
 	switch (interaction.commandName) {
 		case "drawaugust": {
 			if (recently_drawn.card.has(interaction.user.id)) {
@@ -51,21 +52,19 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({})
 			});
-			const json = (await res.json()) as any; // Hacky! Replace with a better workaround later. 
-				// source: https://github.com/node-fetch/node-fetch/issues/1262#issuecomment-910417511
-			if (json["status"] && json["status"] !== "200") {
+			const buf = res.body.read();
+			const quote: Quote = JSON.parse(buf.toString());
+			if (quote["status"] && quote["status"] !== "200") {
 				return;
 			}
-			const quote: Quote = JSON.parse(json);
 			const display_name: string = await get_username(client, interaction.guild, quote.quotee);
-
 			await interaction.reply({ content: `> ${quote.quote}\n —${display_name}` });
 		} break;
 
 		case "addquote": {
 			const quote = interaction.options.get("quote")?.value;
 			const quotee = interaction.options.get("user")?.user;
-			// Avoid sending bad data.
+			// Avoid sending anything with bad data.
 			if (quote === undefined || quotee === undefined || typeof quote !== "string") return;
 
 			const body = {
@@ -80,9 +79,10 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify(body)
 			});
-			const json = (await res.json()) as any;
+			const buf = res.body.read();
+			const json = JSON.parse(buf.toString());
 			if (json["status"] && json["status"] === "200") {
-				await interaction.reply({ content : `${interaction.user} added a quote from ${quotee} to the database.` });
+				await interaction.reply({ content : `${interaction.user} added a quote from ${quotee} to the quote database.` });
 			}
 		} break;
 
@@ -95,13 +95,13 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : query })
 			});
-			const json = (await res.json()) as any;
+			const buf = res.body.read();
+			const quote: Quote = JSON.parse(buf.toString());
 
-			if (json["status"] && json["status"] === "200") {
-				const quote: Quote = JSON.parse(json);
+			if (quote["status"] && quote["status"] === "200") {
 				const display_name: string = await get_username(client, interaction.guild, quote.quotee);
 				await interaction.reply({ content: `> ${quote.quote}\n —${display_name}` });
-			} else if (json["status"] && json["status"] === "204") {
+			} else if (quote["status"] && quote["status"] === "204") {
 				await interaction.reply({content: "No matching quote found.", ephemeral: true});
 			}
 		} break;

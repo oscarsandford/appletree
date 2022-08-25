@@ -2,26 +2,26 @@ mod db;
 
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use db::SQLdb;
 
 
 fn handle(buf: &mut [u8]) {
-	// Bytes to JSON
+	// Bytes to JSON.
 	let bufst = String::from_utf8_lossy(&buf).replace("\0", "");
 	let buflns = bufst.split("\r\n").collect::<Vec<&str>>();
 	let bodyst = buflns.last().unwrap_or(&"");
 
 	let path = buflns.first().unwrap_or(&"").split_whitespace().nth(1).unwrap_or("/");
-	let body_json: serde_json::Value = serde_json::from_str(bodyst).unwrap_or(json!({}));
+	let body_json: Value = serde_json::from_str(bodyst).unwrap_or(json!({}));
 
-	println!("[Eden] req:\n{}\n", &bufst);
+	println!("[Eden] req:\n{}\n---\n", &bufst);
 
 	// TODO: ideally, we can make use of this db connection multiple times.
 	let db = SQLdb::new("./db/user.db").unwrap(); // Fix this unwrap
 
-	let res_json: serde_json::Value = match path {
+	let res_json: Value = match path {
 		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
 		"/db/quote/find" => db.quote_find(body_json["query"].to_string()).unwrap_or(json!({"status":"500"})),
 		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
@@ -31,19 +31,21 @@ fn handle(buf: &mut [u8]) {
 
 	// Write response: overwrite the bytes in the buffer, and pad with zeroes.
 	if let Ok(res_bytes) = serde_json::to_vec(&res_json) {
-		// Prepend HTTP/1.1 header.
-		let hst = format!("HTTP/1.1 200 OK\n\rContent-Type: application/json\n\rContent-Length: {}\n\r\n\r", res_bytes.len());
-		let header = hst.as_bytes();
+		// Prepend a simple HTTP/1.1 header.
+		let header = b"HTTP/1.1 200 OK\n\r\n\r";
+		// TODO: we know this header will always be 19 bytes, so we can 
+		// justify hard coding it instead of having the `hl` variable.
 		let hl = header.len();
 
 		for i in 0..hl {
 			buf[i] = header[i];
 		}
 		for i in 0..1024-hl {
-			buf[hl+i] = if i < res_bytes.len() { res_bytes[i] } else { 0 as u8 };
+			buf[hl+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
+			// Having a `0 as u8` instead of `' ' as u8` for the longest time cost so much grief on the front end.
 		}
+		println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..hl+res_bytes.len()]));
 	}
-	println!("[Eden] res:\n{}\n", String::from_utf8_lossy(&buf));
 }
 
 

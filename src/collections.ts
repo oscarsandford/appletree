@@ -1,8 +1,5 @@
 import * as cards_json from "./resources/cards.json";
 import * as tarot_json from "./resources/tavernarcana.json";
-export const trading_cards: Array<TradingCard> = cards_json;
-export const tarot_cards: Array<TarotCard> = tarot_json;
-export const card_weights: Array<number> = [0.19, 0.3, 0.4, 0.1, 0.01];
 
 export interface TradingCard {
 	id: number,
@@ -33,8 +30,17 @@ export interface Quote {
 	qweight: string
 }
 
+const trading_cards: Array<TradingCard> = cards_json;
+const tarot_cards: Array<TarotCard> = tarot_json;
+const card_weights: Array<number> = [0.19, 0.3, 0.4, 0.1, 0.01];
+
 
 export function draw_trading_card(): TradingCard {
+	/**
+	 * Returns a trading card randomly drawn based on rates for each rank.
+	 * 
+	 * @returns A randomly drawn trading card.
+	 */
 	let rand_rank = random_index_weighted(card_weights);
 	let selected_cards = trading_cards.filter((c) => c.rank === rand_rank);
 	let rand_card = selected_cards[Math.floor(Math.random() * selected_cards.length)];
@@ -43,11 +49,14 @@ export function draw_trading_card(): TradingCard {
 }
 
 export function draw_tarot_cards(drawer: string): [TarotCard, TarotCard, TarotCard] {
+	/**
+	 * Draws 3 tarot cards: a main card, a reverse card, and a advice card.
+	 * 
+	 * @param drawer - The Discord username of the user who issued the command.
+	 * @returns A TarotCard 3-tuple with the main, reverse, and advice cards, respectively.
+	 */
+
 	let selected_cards = new Array<TarotCard>;
-	// Get three unique cards
-	//  - first one is primary
-	//  - second is its reverse, or warning
-	//  - third is some more advice
 	while (selected_cards.length < 3) {
 		let c: TarotCard;
 		do {
@@ -62,14 +71,28 @@ export function draw_tarot_cards(drawer: string): [TarotCard, TarotCard, TarotCa
 	return [selected_cards[0], selected_cards[1], selected_cards[2]];
 }
 
-export function set_cooldown(target: string, set: Set<string>, timeout: number): void {
-	set.add(target);
+export function set_cooldown(uid: string, set: Set<string>, timeout: number): void {
+	/**
+	 * Adds the target's UID to a given set for a given time (in ms) to track cooldown.
+	 * 
+	 * @param uid - The Discord user id in string form.
+	 * @param set - The set to add the uid to.
+	 * @param set - How long to wait (in ms) before removing the uid from the set.
+	 */
+	set.add(uid);
 	setTimeout(() => {
-		set.delete(target);
+		set.delete(uid);
 	}, timeout);
 }
 
 function random_index_weighted(weights: Array<number>): number {
+	/**
+	 * Returns a randomly chosen index based on a set of weights.
+	 * Based on this Python implementation: https://stackoverflow.com/a/10803136.
+	 * 
+	 * @param weights - An array of floating point weights.
+	 * @returns An integer index.
+	 */
 	let r = Math.random();
 	let cumul_sum = new Array(weights.length);
 	for (let i = 1; i < cumul_sum.length; i++) {

@@ -37,13 +37,14 @@ impl SQLdb {
 		}
 		let mut rng = thread_rng();
 		// Weighted selection. 
+		// TODO: consider normalizing the weights each time. This will prevent us from having to store terribly small numbers.
 		let dist = WeightedIndex::new(quotes.iter().map(|q| q.qweight))?;
 		let ridx: usize = dist.sample(&mut rng);
 		let quote = &quotes[ridx];
 
 		// Reduce the weight of the randomly selected quote, so it is less likely to be pulled next.
 		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE quote = ?1", params![quote.quote]) {
-			println!("[Eden] Updated {} rows.", n);
+			println!("[Eden] Updated {} the weights on rows.", n);
 		};
 
 		Ok(json!({
@@ -59,7 +60,8 @@ impl SQLdb {
 		// Make the substring lowercase so that we are matching case in the query.
 		let quote_subst = query_st.replace("\\", "").replace("\"", "").to_lowercase();
 
-		// This is super bad, but I cannot figure out how to format the query params otherwise. Fix later.
+		// This is super bad, but I cannot figure out how to format the query params otherwise. 
+		// I don't know if I can trust this query to be sanitized/validated down the pipeline. Fix later.
 		let query = format!("SELECT * FROM quotes WHERE LOWER(quote) LIKE '%{}%' LIMIT 1", quote_subst);
 
 		let mut stmt = self.conn.prepare(&query)?;
