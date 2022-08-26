@@ -4,4 +4,5 @@ dist
 .env
 # Eden
 eden/target
+eden/data
 eden/db/*.db

@@ -12,3 +12,4 @@ database in memory to a database file.
 $ sqlite3
 sqlite> .read user_schema.sql
 sqlite> .save user.db
+```
