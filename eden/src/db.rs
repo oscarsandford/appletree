@@ -12,7 +12,7 @@ struct Quote {
 }
 
 pub struct SQLdb {
-	conn: Connection
+	pub conn: Connection
 }
 
 impl SQLdb {
@@ -44,7 +44,7 @@ impl SQLdb {
 
 		// Reduce the weight of the randomly selected quote, so it is less likely to be pulled next.
 		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE quote = ?1", params![quote.quote]) {
-			println!("[Eden] Updated {} the weights on rows.", n);
+			println!("[Eden] Updated weights on {} rows.", n);
 		};
 
 		Ok(json!({

@@ -1,5 +1,8 @@
-import * as cards_json from "./resources/cards.json";
-import * as tarot_json from "./resources/tavernarcana.json";
+import cards_json from "./resources/cards.json";
+import tarot_json from "./resources/tavernarcana.json";
+const trading_cards: Array<TradingCard> = cards_json;
+const tarot_cards: Array<TarotCard> = tarot_json;
+const card_weights: Array<number> = [0.19, 0.3, 0.4, 0.1, 0.01];
 
 export interface TradingCard {
 	id: number,
@@ -30,10 +33,6 @@ export interface Quote {
 	qweight: string
 }
 
-const trading_cards: Array<TradingCard> = cards_json;
-const tarot_cards: Array<TarotCard> = tarot_json;
-const card_weights: Array<number> = [0.19, 0.3, 0.4, 0.1, 0.01];
-
 
 export function draw_trading_card(): TradingCard {
 	/**
@@ -55,20 +54,14 @@ export function draw_tarot_cards(drawer: string): [TarotCard, TarotCard, TarotCa
 	 * @param drawer - The Discord username of the user who issued the command.
 	 * @returns A TarotCard 3-tuple with the main, reverse, and advice cards, respectively.
 	 */
+	let uniq = new Set<TarotCard>;
+	do {
+		let c = tarot_cards[Math.floor(Math.random() * tarot_cards.length)];
+		if (c.imglink != "") uniq.add(c);
+	} while (uniq.size < 3);
 
-	let selected_cards = new Array<TarotCard>;
-	while (selected_cards.length < 3) {
-		let c: TarotCard;
-		do {
-			c = tarot_cards[Math.floor(Math.random() * tarot_cards.length)];
-		} while (c.imglink == "" || selected_cards.includes(c));
-		selected_cards.push(c);
-	}
-	// For lucky primary draws on The World. Yes, this is a JoJo reference!
-	if (selected_cards[0]["id"] === 21) {
-		selected_cards[0]["description"] = `I, ${drawer}, have a dream!`;
-	}
-	return [selected_cards[0], selected_cards[1], selected_cards[2]];
+	let cards = Array.from(uniq);
+	return [cards[0], cards[1], cards[2]];
 }
 
 export function set_cooldown(uid: string, set: Set<string>, timeout: number): void {

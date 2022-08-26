@@ -19,7 +19,13 @@ fn handle(buf: &mut [u8]) {
 	println!("[Eden] req:\n{}\n---\n", &bufst);
 
 	// TODO: ideally, we can make use of this db connection multiple times.
-	let db = SQLdb::new("./db/user.db").unwrap(); // Fix this unwrap
+	let db = match SQLdb::new("db/user.db") {
+		Ok(x) => x,
+		Err(_) => {
+			eprintln!("[Eden] Database connection error. Request handling aborted.");
+			return;
+		}
+	};
 
 	let res_json: Value = match path {
 		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
@@ -46,12 +52,21 @@ fn handle(buf: &mut [u8]) {
 		}
 		println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..hl+res_bytes.len()]));
 	}
+
+	// TODO: This should be done in a neater fashion.
+	match db.conn.close() {
+		Ok(_) => {},
+		Err(_) => {
+			eprintln!("[Eden] Database closure error. Request handling aborted.");
+			return;
+		}
+	};
 }
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	println!("[Eden] Starting");
+	println!("[Eden] Listening on 127.0.0.1:8080.");
 	let listener = TcpListener::bind("127.0.0.1:8080").await?;
 
 	loop {
