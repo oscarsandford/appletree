@@ -25,13 +25,18 @@ export interface TarotCard {
 	deck: string
 }
 
-export interface Quote {
+export interface EdenResponse {
 	status: string,
+}
+
+export interface Quote extends EdenResponse {
 	quote: string,
 	quotee: string,
 	quoter: string,
 	qweight: string
 }
+
+
 
 
 export function draw_trading_card(): TradingCard {

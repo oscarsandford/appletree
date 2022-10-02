@@ -18,7 +18,7 @@ fn handle(buf: &mut [u8]) {
 
 	println!("[Eden] req:\n{}\n---\n", &bufst);
 
-	// TODO: ideally, we can make use of this db connection multiple times.
+	// I think it's better to open a new connection for each request. Keeps things atomic.
 	let db = match SQLdb::new("db/user.db") {
 		Ok(x) => x,
 		Err(_) => {
@@ -29,28 +29,24 @@ fn handle(buf: &mut [u8]) {
 
 	let res_json: Value = match path {
 		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
-		"/db/quote/find" => db.quote_find(body_json["query"].to_string()).unwrap_or(json!({"status":"500"})),
+		"/db/quote/find" => db.quote_find(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
-		// "/db/quote/remove" => {},
+		"/db/quote/remove" => db.quote_remove(body_json).unwrap_or(json!({"status":"500"})),
 		_ => {json!({"status":"404"})},
 	};
 
 	// Write response: overwrite the bytes in the buffer, and pad with zeroes.
 	if let Ok(res_bytes) = serde_json::to_vec(&res_json) {
-		// Prepend a simple HTTP/1.1 header.
+		// Prepend a simple HTTP/1.1 header. We know this header will always be 19 bytes.
 		let header = b"HTTP/1.1 200 OK\n\r\n\r";
-		// TODO: we know this header will always be 19 bytes, so we can 
-		// justify hard coding it instead of having the `hl` variable.
-		let hl = header.len();
-
-		for i in 0..hl {
+		for i in 0..19 {
 			buf[i] = header[i];
 		}
-		for i in 0..1024-hl {
-			buf[hl+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
+		for i in 0..1005 {
+			buf[19+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
 			// Having a `0 as u8` instead of `' ' as u8` for the longest time cost so much grief on the front end.
 		}
-		println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..hl+res_bytes.len()]));
+		println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..19+res_bytes.len()]));
 	}
 
 	// TODO: This should be done in a neater fashion.
@@ -75,7 +71,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		tokio::spawn(async move {
 			let mut buf = [0; 1024];
 
-			// Read data from socket. Writeback to socket.
 			loop {
 				let n = match socket.read(&mut buf).await {
 					Ok(n) if n == 0 => {return;},

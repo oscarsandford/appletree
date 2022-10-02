@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { TarotCard, TradingCard } from "./collections";
 
 export function build_trading_card_embed(tc: TradingCard): [EmbedBuilder, ActionRowBuilder] {
@@ -53,4 +53,23 @@ export function build_tarot_card_embed(mc: TarotCard, rc: TarotCard, ac: TarotCa
 		.setImage(mc.imglink);
 		// .setColor("DARK_RED")
 		// .setFooter("Tavern Arcana");
+}
+
+export function build_button(id: string, label: string, style: ButtonStyle, disabled: boolean): ActionRowBuilder<ButtonBuilder> {
+	/**
+	 * A convenience function for making simple interactive buttons.
+	 * 
+	 * @param id - An id for uniquely identifying interactions with this button.
+	 * @param label - A cosmetic string displayed with the button.
+	 * @param style - The display colour of the button.
+	 * @param disabled - Whether the button should be interactive or not.
+	 */
+	return new ActionRowBuilder<ButtonBuilder>()
+		.addComponents(
+			new ButtonBuilder()
+				.setCustomId(id)
+				.setLabel(label)
+				.setStyle(style)
+				.setDisabled(disabled)
+		);
 }
