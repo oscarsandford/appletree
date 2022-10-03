@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Interaction, ComponentType, ButtonStyle } from "discord.js";
+import { Client, GatewayIntentBits, Interaction, ComponentType, ButtonStyle, Message } from "discord.js";
 import fetch from "node-fetch";
 
 import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, TradingCard } from "./collections";
@@ -8,16 +8,29 @@ import * as DAPI from "./dapi";
 import dotenv from "dotenv";
 dotenv.config();
 
-const client: Client<boolean> = new Client({ intents : [GatewayIntentBits.Guilds] });
+const client: Client<boolean> = new Client({ intents : [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 client.login(process.env.APL_DISCORDJS);
 
-const recently_drawn = {
+const recency_cache = {
 	"card" : new Set<string>(),
-	"tarot" : new Set<string>()
+	"tarot" : new Set<string>(),
+	"msgs" : new Set<string>(),
 };
 
 client.on("ready", () => {
 	console.log("> Appletree has bloomed.");
+});
+
+client.on("messageCreate", async (message: Message) => {
+	// Collect 25-35 XP up to once every minute while messaging.
+	if (!recency_cache.msgs.has(message.author.id)) {
+		set_cooldown(message.author.id, recency_cache.msgs, 60000);
+		await fetch("http://localhost:8080/db/user/xp", {
+			method : "POST",
+			headers : { "Content-Type" : "application/json" },
+			body: JSON.stringify({ "uid" : message.author.id, "xp" : Math.floor(Math.random()*11)+25 })
+		});
+	}
 });
 
 client.on("interactionCreate", async (interaction: Interaction) => {
@@ -25,25 +38,25 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
 	switch (interaction.commandName) {
 		case "drawaugust": {
-			if (recently_drawn.card.has(interaction.user.id)) {
+			if (recency_cache.card.has(interaction.user.id)) {
 				await interaction.reply({ content: "Draw on cooldown.", ephemeral: true });
 				return;
 			}
 			const trading_card: TradingCard = draw_trading_card();
 			const [card, row] = build_trading_card_embed(trading_card);
 			await interaction.reply({ embeds : [card], components : [] });
-			set_cooldown(interaction.user.id, recently_drawn.card, 600000);
+			set_cooldown(interaction.user.id, recency_cache.card, 600000);
 		} break;
 
 		case "drawtarot": {
-			if (recently_drawn.tarot.has(interaction.user.id)) {
+			if (recency_cache.tarot.has(interaction.user.id)) {
 				await interaction.reply({ content: "Tarot draw on cooldown.", ephemeral: true });
 				return;
 			}
 			const [mc, rc, ac] = draw_tarot_cards(interaction.user.username);
 			const card = build_tarot_card_embed(mc, rc, ac);
 			await interaction.reply({ embeds : [card] });
-			set_cooldown(interaction.user.id, recently_drawn.tarot, 600000);
+			set_cooldown(interaction.user.id, recency_cache.tarot, 600000);
 		} break;
 
 		case "quote": {

@@ -32,6 +32,11 @@ fn handle(buf: &mut [u8]) {
 		"/db/quote/find" => db.quote_find(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/quote/remove" => db.quote_remove(body_json).unwrap_or(json!({"status":"500"})),
+		"/db/user" => {json!({"status":"404"})},
+		"/db/user/xp" => db.set_user_xp(body_json).unwrap_or(json!({"status":"500"})),
+		"/db/user/credit" => {json!({"status":"404"})},
+		"/db/user/bg" => {json!({"status":"404"})},
+		"/db/user/card/add" => {json!({"status":"404"})},
 		_ => {json!({"status":"404"})},
 	};
 

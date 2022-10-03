@@ -13,3 +13,10 @@ $ sqlite3
 sqlite> .read user_schema.sql
 sqlite> .save user.db
 ```
+
+## Notes
+
+For Sqlite 3.x, you need to make the following query every time when connecting to a database in order to enforce foreign key constraints.
+```sql
+PRAGMA foreign_keys = ON;
+```

@@ -24,6 +24,8 @@ pub struct SQLdb {
 impl SQLdb {
 	pub fn new(dbfpath: &str) -> Result<SQLdb, Error> {
 		let conn = self::Connection::open(dbfpath)?;
+		// For SQLite3, we have to force FK constraints on entry.
+		conn.pragma_update(None, "foreign_keys", true)?;
 		Ok( SQLdb { conn } )
 	}
 
@@ -109,6 +111,13 @@ impl SQLdb {
 	pub fn quote_add(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
 		let quote: Quote = serde_json::from_value(req_json)?;
 		println!("[Eden:quotes] Adding {:?}", &quote);
+
+		// TODO: here we must do a check to make sure both the quotee and the quoter are in the system.
+		// If not, they must first be added to the system to the "users" table, so 
+		// that we can attribute this quote to them (whether they are the quotee or quoter).
+
+		// Also, maybe getting quoted gives you some XP!!
+
 		let n = self.conn.execute("INSERT INTO quotes (quote, quotee, quoter, qweight) VALUES (?1, ?2, ?3, ?4)", 
 			(&quote.quote, &quote.quotee, &quote.quoter, &quote.qweight)
 		)?;
@@ -161,4 +170,25 @@ impl SQLdb {
 			},
 		}
 	}
+
+	// pub fn get_user() -> Result<Value, Box<dyn std::error::Error>> {
+
+	// }
+
+	pub fn set_user_xp(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+		dbg!(&req_json);
+		Ok(json!({ "status" : "200" }))
+	}
+
+	// pub fn set_user_credit() -> Result<Value, Box<dyn std::error::Error>> {
+		
+	// }
+
+	// pub fn set_user_bg() -> Result<Value, Box<dyn std::error::Error>> {
+		
+	// }
+
+	// pub fn add_card() -> Result<Value, Box<dyn std::error::Error>> {
+		
+	// }
 }
