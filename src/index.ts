@@ -28,7 +28,7 @@ client.on("messageCreate", async (message: Message) => {
 		await fetch("http://localhost:8080/db/user/xp", {
 			method : "POST",
 			headers : { "Content-Type" : "application/json" },
-			body: JSON.stringify({ "uid" : message.author.id, "xp" : Math.floor(Math.random()*11)+25 })
+			body: JSON.stringify({ "query" : (Math.floor(Math.random()*11)+25).toString(), "requester" : message.author.id })
 		});
 	}
 });
@@ -173,7 +173,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 								// Update button to error
 								const error_btn = build_button("unquote_error", "Something went wrong.", ButtonStyle.Secondary, true);
 								await i.editReply({ components : [error_btn] });
-							}	
+							}
 						}
 					});
 				}

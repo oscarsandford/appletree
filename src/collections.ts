@@ -33,9 +33,16 @@ export interface Quote extends EdenResponse {
 	quote: string,
 	quotee: string,
 	quoter: string,
-	qweight: string
+	qweight: number
 }
 
+export interface User extends EdenResponse {
+	id: string,
+	lvl: number,
+	xp: number,
+	credit: number,
+	bg: string,
+}
 
 
 

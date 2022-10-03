@@ -1,4 +1,4 @@
-use rusqlite::{Connection, Result, Error, params};
+use rusqlite::{Connection, Result, Error};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use rand::{thread_rng, distributions::WeightedIndex, distributions::Distribution};
@@ -8,8 +8,23 @@ struct Quote {
 	quote: String,
 	quotee: String,
 	quoter: String,
-	qweight: f32,
+	qweight: f64,
 }
+
+#[derive(Deserialize, Debug)]
+struct User {
+	id: String,
+	lvl: u16,
+	xp: u32,
+	credit: u32,
+	bg: String,
+}
+
+// enum Payload {
+// 	String,
+// 	Quote,
+// 	Card,
+// }
 
 #[derive(Deserialize, Debug)]
 struct Request {
@@ -50,14 +65,14 @@ impl SQLdb {
 		let quote = &quotes[ridx];
 
 		// We have to use f64 because SQLite REAL values are stored in IEEE 754 Binary-64 format (https://www.sqlite.org/floatingpoint.html).
-		let sum = self.conn.query_row_and_then("SELECT SUM(qweight) FROM quotes", [], |row| row.get(0)).unwrap_or(1.0);
+		let sum: f64 = self.conn.query_row("SELECT SUM(qweight) FROM quotes", [], |row| row.get(0)).unwrap_or(1.0);
 
 		// Reduce the weight of the randomly selected quote, so it is less likely to be pulled next.
-		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE quote = ?1", params![quote.quote]) {
+		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight * 0.5 WHERE quote = ?", [&quote.quote]) {
 			println!("[Eden] Adjusted drawn quote weight (updated {} rows).", n);
 		};
 		// Normalize the weights so that the sum of qweights is close enough to 1.
-		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight / ?1", params![sum]) {
+		if let Ok(n) = self.conn.execute("UPDATE quotes SET qweight = qweight / ?", [sum]) {
 			println!("[Eden] Normalized quote weights (updated {} rows).", n);
 		};
 
@@ -171,24 +186,49 @@ impl SQLdb {
 		}
 	}
 
-	// pub fn get_user() -> Result<Value, Box<dyn std::error::Error>> {
-
-	// }
+	pub fn get_user(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+		let req: Request = serde_json::from_value(req_json)?;
+		let user = self.conn.query_row("SELECT * FROM users WHERE id = ?", [&req.requester], |row| {
+			Ok(User{
+				id: row.get(0)?,
+				lvl: row.get(1)?,
+				xp: row.get(2)?,
+				credit: row.get(3)?,
+				bg: row.get(4)?,
+			})
+		})?;
+		Ok(json!({
+			"status" : "200",
+			"id" : &user.id,
+			"lvl" : &user.lvl,
+			"xp" : &user.xp,
+			"credit" : &user.credit,
+			"bg" : &user.bg,
+		}))
+	}
 
 	pub fn set_user_xp(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
-		dbg!(&req_json);
+		let req: Request = serde_json::from_value(req_json)?;
+		let xp_delta = req.query.parse::<u32>().unwrap_or(0);
+		self.conn.execute("UPDATE users SET xp = xp + ?1 WHERE id = ?2", (xp_delta, &req.requester))?;
 		Ok(json!({ "status" : "200" }))
 	}
 
-	// pub fn set_user_credit() -> Result<Value, Box<dyn std::error::Error>> {
-		
-	// }
+	pub fn set_user_credit(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+		let req: Request = serde_json::from_value(req_json)?;
+		let credit_delta = req.query.parse::<u32>().unwrap_or(0);
+		self.conn.execute("UPDATE users SET credit = credit + ?1 WHERE id = ?2", (credit_delta, &req.requester))?;
+		Ok(json!({ "status" : "200" }))
+	}
 
-	// pub fn set_user_bg() -> Result<Value, Box<dyn std::error::Error>> {
-		
-	// }
+	pub fn set_user_bg(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+		let req: Request = serde_json::from_value(req_json)?;
+		// TODO: add some sanitation to make sure the payload is a valid image URL.
+		self.conn.execute("UPDATE users SET bg = ?1 WHERE id = ?2", (&req.query, &req.requester))?;
+		Ok(json!({ "status" : "200" }))
+	}
 
-	// pub fn add_card() -> Result<Value, Box<dyn std::error::Error>> {
+	// pub fn add_card(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
 		
 	// }
 }
