@@ -14,3 +14,10 @@ Eden is first started as a background process, and Applebot is spawned afterward
 * `./launch.sh build` forces compilation of a new release build before launch.
 
 You may need to make use of `kill` or `pkill`, in order to clean up Eden if the main process exits prematurely.
+
+## Seed
+In order to make use of slash commands, you must run the script to register them with Discord's API using the following npm command:
+```sh
+npm run seed
+```
+The propagation time may vary, but expect it to take a while, especially when running the global configuration. See `scripts/seed.js` for more info on how to do this.

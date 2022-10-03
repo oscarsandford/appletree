@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits, Interaction, ComponentType, ButtonStyle, Message } from "discord.js";
 import fetch from "node-fetch";
 
-import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, TradingCard } from "./collections";
-import { build_trading_card_embed, build_tarot_card_embed, build_button } from "./constructors";
+import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, UserData, TradingCard } from "./collections";
+import { build_trading_card_embed, build_tarot_card_embed, build_button, build_user_embed } from "./constructors";
 import * as DAPI from "./dapi";
 
 import dotenv from "dotenv";
@@ -70,7 +70,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			if (quote.status && quote.status !== "200") {
 				return;
 			}
-			const display_name: string = await DAPI.get_username(client, interaction.guild, quote.quotee);
+			const display_name: string = await DAPI.get_user_name(client, interaction.guild, quote.quotee);
 			await interaction.reply({ content: `> ${quote.quote}\n—${display_name}` });
 		} break;
 
@@ -114,7 +114,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
 			if (quote.status) {
 				if (quote.status === "200") {
-					const display_name: string = await DAPI.get_username(client, interaction.guild, quote.quotee);
+					const display_name: string = await DAPI.get_user_name(client, interaction.guild, quote.quotee);
 					await interaction.reply({ content: `> ${quote.quote}\n —${display_name}` });
 				}
 				else if (quote.status === "404") {
@@ -147,7 +147,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			else if (quote.status === "200") {
 				if (requester === quote.quotee || requester === quote.quoter) {
 					// Throw out a button on the reply. If it is clicked, carry on with a call to remove.
-					const display_name: string = await DAPI.get_username(client, interaction.guild, quote.quotee);
+					const display_name: string = await DAPI.get_user_name(client, interaction.guild, quote.quotee);
 					const confirm_btn = build_button("unquote_confirm", "Delete Quote", ButtonStyle.Danger, false);
 					await interaction.reply({ content: `> ${quote.quote}\n—${display_name}` , components : [confirm_btn] , ephemeral : true});
 					
@@ -178,12 +178,52 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 					});
 				}
 				else {
-					const quotee_name: string = await DAPI.get_username(client, interaction.guild, quote.quotee);
-					const quoter_name: string = await DAPI.get_username(client, interaction.guild, quote.quoter);
+					const quotee_name: string = await DAPI.get_user_name(client, interaction.guild, quote.quotee);
+					const quoter_name: string = await DAPI.get_user_name(client, interaction.guild, quote.quoter);
 					await interaction.reply({ content : `You cannot remove the following quote\n> ${quote.quote}\ndue to you not ` +
 					`being the quoter (${quoter_name}) or the quotee (${quotee_name}).`, ephemeral : true });
 				}
 			}
+		} break;
+
+		case "profile": {
+			// Returns embed of user info.
+			const res = await fetch("http://localhost:8080/db/user", {
+				method : "POST",
+				headers : { "Content-Type" : "application/json" },
+				body: JSON.stringify({ "query" : "", "requester" : interaction.user.id })
+			});
+			const buf = res.body.read();
+			const udata: UserData = JSON.parse(buf.toString());
+			if (udata.status === "200") {
+				const uname = await DAPI.get_user_name(client, interaction.guild, udata.id);
+				const uicon = await DAPI.get_user_avatar(client, interaction.guild, udata.id);
+				const user_card = build_user_embed(uname, uicon, interaction.user.accentColor, udata);
+				await interaction.reply({ embeds : [user_card] });
+			}
+		} break;
+
+		case "background": {
+			const url = interaction.options.get("url")?.value;
+			if (typeof url !== "string") return;
+
+			const res = await fetch("http://localhost:8080/db/user/bg", {
+				method : "POST",
+				headers : { "Content-Type" : "application/json" },
+				body: JSON.stringify({ "query" : url, "requester" : interaction.user.id })
+			});
+			const buf = res.body.read();
+			const eres: EdenResponse = JSON.parse(buf.toString());
+			if (eres.status && eres.status === "200") {
+				await interaction.reply({ content : "Your profile background has been updated.", ephemeral : true });
+			}
+			else {
+				await interaction.reply({ content : "Something went wrong while updating your profile background.", ephemeral : true });
+			}
+		} break;
+
+		case "collection": {
+			// View your trading card collection. To be implemented.
 		} break;
 	}
 });

@@ -4,7 +4,8 @@
   "description": "Applebot upgraded TypeScript and its own Rust web server and SQL database.",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "seed": "node scripts/seed.js"
   },
   "author": "oes",
   "license": "GPL-3.0",

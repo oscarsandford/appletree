@@ -36,15 +36,13 @@ export interface Quote extends EdenResponse {
 	qweight: number
 }
 
-export interface User extends EdenResponse {
+export interface UserData extends EdenResponse {
 	id: string,
 	lvl: number,
 	xp: number,
 	credit: number,
 	bg: string,
 }
-
-
 
 export function draw_trading_card(): TradingCard {
 	/**

@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { TarotCard, TradingCard } from "./collections";
+import { TarotCard, TradingCard, UserData } from "./collections";
 
 export function build_trading_card_embed(tc: TradingCard): [EmbedBuilder, ActionRowBuilder] {
 	/**
@@ -63,6 +63,8 @@ export function build_button(id: string, label: string, style: ButtonStyle, disa
 	 * @param label - A cosmetic string displayed with the button.
 	 * @param style - The display colour of the button.
 	 * @param disabled - Whether the button should be interactive or not.
+	 * 
+	 * @returns The constructed button.
 	 */
 	return new ActionRowBuilder<ButtonBuilder>()
 		.addComponents(
@@ -72,4 +74,30 @@ export function build_button(id: string, label: string, style: ButtonStyle, disa
 				.setStyle(style)
 				.setDisabled(disabled)
 		);
+}
+
+export function build_user_embed(uname: string, uicon: string, ucolr: number | null | undefined, udata: UserData): EmbedBuilder {
+	/**
+	 * A function to create profile embeds for user data.
+	 * 
+	 * @param uname - The user NAME, not id.
+	 * @param uicon - The URL for the user avatar icon.
+	 * @param ucolr - The accent color of the user profile.
+	 * @param udata - The data for the user.
+	 * 
+	 * @returns The constructed embed.
+	 */
+	if (!ucolr || ucolr === undefined) ucolr = 0;
+
+	return new EmbedBuilder()
+		.setColor(ucolr)
+		.setTitle(uname)
+		.setThumbnail(uicon)
+		.addFields(
+			{ name : "Level", value: `${udata.lvl}`, inline : true },
+			{ name : "XP", value: `${udata.xp}`, inline : true },
+			{ name : "Credit", value: `${udata.credit}`, inline : true },
+		)
+		.setImage(udata.bg)
+		.setTimestamp();
 }
