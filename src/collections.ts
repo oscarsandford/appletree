@@ -27,6 +27,7 @@ export interface TarotCard {
 
 export interface EdenResponse {
 	status: string,
+	msg: string,
 }
 
 export interface Quote extends EdenResponse {

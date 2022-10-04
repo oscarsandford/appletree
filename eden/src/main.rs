@@ -1,4 +1,5 @@
 mod db;
+mod types;
 
 use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -16,7 +17,8 @@ fn handle(buf: &mut [u8]) {
 	let path = buflns.first().unwrap_or(&"").split_whitespace().nth(1).unwrap_or("/");
 	let body_json: Value = serde_json::from_str(bodyst).unwrap_or(json!({}));
 
-	println!("[Eden] req:\n{}\n---\n", &bufst);
+	// println!("[Eden] req:\n{}\n---\n", &bufst);
+	println!("[Eden] req: ({}) {:?}", path, &body_json);
 
 	// I think it's better to open a new connection for each request. Keeps things atomic.
 	let db = match SQLdb::new("db/user.db") {
@@ -51,7 +53,8 @@ fn handle(buf: &mut [u8]) {
 			buf[19+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
 			// Having a `0 as u8` instead of `' ' as u8` for the longest time cost so much grief on the front end.
 		}
-		println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..19+res_bytes.len()]));
+		// println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..19+res_bytes.len()]));
+		println!("[Eden] res: {}\n", String::from_utf8_lossy(&res_bytes));
 	}
 
 	// TODO: This should be done in a neater fashion.

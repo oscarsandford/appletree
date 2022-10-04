@@ -1,50 +1,38 @@
-use rusqlite::{Connection, Result, Error};
-use serde::Deserialize;
+use rusqlite::Connection;
 use serde_json::{json, Value};
 use rand::{thread_rng, distributions::WeightedIndex, distributions::Distribution};
 
-#[derive(Deserialize, Debug)]
-struct Quote {
-	quote: String,
-	quotee: String,
-	quoter: String,
-	qweight: f64,
-}
+use crate::types::*;
 
-#[derive(Deserialize, Debug)]
-struct User {
-	id: String,
-	lvl: u16,
-	xp: u32,
-	credit: i32,
-	bg: String,
-}
-
-// enum Payload {
-// 	String,
-// 	Quote,
-// 	Card,
-// }
-
-#[derive(Deserialize, Debug)]
-struct Request {
-	query: String,
-	requester: String,
-}
 
 pub struct SQLdb {
 	pub conn: Connection
 }
 
 impl SQLdb {
-	pub fn new(dbfpath: &str) -> Result<SQLdb, Error> {
+	pub fn new(dbfpath: &str) -> Result<SQLdb, EdenErr> {
 		let conn = self::Connection::open(dbfpath)?;
 		// For SQLite3, we have to force FK constraints on entry.
 		conn.pragma_update(None, "foreign_keys", true)?;
 		Ok( SQLdb { conn } )
 	}
 
-	pub fn quote_draw(&self) -> Result<Value, Box<dyn std::error::Error>> {
+	fn set_xp(&self, uid: &String, delta: i32) -> Result<Value, EdenErr> {
+		// A private function to set XP and update level as needed.
+		let n = self.conn.execute("UPDATE users SET xp = xp + ?1 WHERE id = ?2", (delta, uid))?;
+		// Add the user if this operation did not update an existing record.
+		if n == 0 {
+			self.conn.execute("INSERT INTO users (id, xp) VALUES(?1, ?2)", (uid, delta))?;
+		}
+		let new_xp: u32 = self.conn.query_row("SELECT xp FROM users WHERE id = ?", [uid], |row| row.get(0)).unwrap_or(0);
+		if new_xp != 0 {
+			let new_lvl = ((new_xp / 314) as f32).sqrt() as u16;
+			self.conn.execute("UPDATE users SET lvl = ?1 WHERE id = ?2", (new_lvl, uid))?;
+		}
+		Ok(json!({ "status" : "200" }))
+	}
+
+	pub fn quote_draw(&self) -> Result<Value, EdenErr> {
 		let mut stmt = self.conn.prepare("SELECT * FROM quotes")?;
 		let retrieved_quotes = stmt.query_map([], |row| {
 			Ok(Quote {
@@ -81,7 +69,7 @@ impl SQLdb {
 		}))
 	}
 
-	pub fn quote_find(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn quote_find(&self, req_json: Value) -> Result<Value, EdenErr> {
 		// Make the substring lowercase so that we are matching case in the query.
 		let req: Request = serde_json::from_value(req_json)?;
 		let quote_subst = req.query.replace("\\", "").replace("\"", "").to_lowercase();
@@ -119,7 +107,7 @@ impl SQLdb {
 		}
 	}
 
-	pub fn quote_add(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn quote_add(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let quote: Quote = serde_json::from_value(req_json)?;
 		// Make sure the quotee and quoter are already users. If they 
 		// are, the PK constraint will disallow these insertions.
@@ -129,11 +117,10 @@ impl SQLdb {
 			"INSERT INTO quotes (quote, quotee, quoter, qweight) VALUES (?1, ?2, ?3, ?4)", 
 			(&quote.quote, &quote.quotee, &quote.quoter, &quote.qweight))?;
 		// Getting quoted gives a flat 100 XP.
-		self.conn.execute("UPDATE users SET xp = xp + ?1 WHERE id = ?2", (100, &quote.quotee))?;
-		Ok(json!({ "status" : "200" }))
+		Ok(self.set_xp(&quote.quotee, 100)?)
 	}
 
-	pub fn quote_remove(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn quote_remove(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		// Make the substring lowercase so that we are matching case in the query.
 		let quote_subst = req.query.replace("\\", "").replace("\"", "").to_lowercase();
@@ -178,7 +165,7 @@ impl SQLdb {
 		}
 	}
 
-	pub fn get_user(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn get_user(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		let user = self.conn.query_row("SELECT * FROM users WHERE id = ?", [&req.requester], |row| {
 			Ok(User{
@@ -199,17 +186,13 @@ impl SQLdb {
 		}))
 	}
 
-	pub fn set_user_xp(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn set_user_xp(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		let delta = req.query.parse::<i32>().unwrap_or(0);
-		let n = self.conn.execute("UPDATE users SET xp = xp + ?1 WHERE id = ?2", (delta, &req.requester))?;
-		if n == 0 {
-			self.conn.execute("INSERT INTO users (id, xp) VALUES(?1, ?2)", (&req.requester, delta))?;
-		}
-		Ok(json!({ "status" : "200" }))
+		Ok(self.set_xp(&req.requester, delta)?)
 	}
 
-	pub fn set_user_credit(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn set_user_credit(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		let delta = req.query.parse::<i32>().unwrap_or(0);
 		let n = self.conn.execute("UPDATE users SET credit = credit + ?1 WHERE id = ?2", (delta, &req.requester))?;
@@ -219,7 +202,7 @@ impl SQLdb {
 		Ok(json!({ "status" : "200" }))
 	}
 
-	pub fn set_user_bg(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
+	pub fn set_user_bg(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		// TODO: add some sanitation to make sure the payload is a valid image URL.
 		let n = self.conn.execute("UPDATE users SET bg = ?1 WHERE id = ?2", (&req.query, &req.requester))?;
