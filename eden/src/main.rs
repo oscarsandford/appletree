@@ -38,7 +38,10 @@ fn handle(buf: &mut [u8]) {
 		"/db/user/xp" => db.set_user_xp(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/user/credit" => db.set_user_credit(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/user/bg" => db.set_user_bg(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/user/card/add" => {json!({"status":"404"})},
+		"/db/card/draw" => db.card_draw().unwrap_or(json!({"status":"500"})),
+		"/db/card/add" => db.card_add(body_json).unwrap_or(json!({"status":"500"})),
+		"/db/item" => db.get_item(body_json).unwrap_or(json!({"status":"500"})),
+		"/db/item/add" => db.item_add(body_json).unwrap_or(json!({"status":"500"})),
 		_ => {json!({"status":"404"})},
 	};
 
@@ -81,8 +84,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 			loop {
 				let n = match socket.read(&mut buf).await {
-					Ok(n) if n == 0 => {return;},
-					Ok(n) => n,
+					Ok(0) => return,
+					Ok(_) => 1024,
 					Err(e) => {
 						eprintln!("[Eden] Socket read failed: {:?}", e);
 						return;

@@ -113,9 +113,11 @@ impl SQLdb {
 		// are, the PK constraint will disallow these insertions.
 		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&quote.quotee]).unwrap_or_default();
 		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&quote.quoter]).unwrap_or_default();
+		// The weight of this quote as it is inserted is the average of the weights as they are now.
+		let avgw: f64 = self.conn.query_row("SELECT AVG(qweight) FROM quotes", [], |row| row.get(0)).unwrap_or(quote.qweight);
 		self.conn.execute(
 			"INSERT INTO quotes (quote, quotee, quoter, qweight) VALUES (?1, ?2, ?3, ?4)", 
-			(&quote.quote, &quote.quotee, &quote.quoter, &quote.qweight))?;
+			(&quote.quote, &quote.quotee, &quote.quoter, &avgw))?;
 		// Getting quoted gives a flat 100 XP.
 		Ok(self.set_xp(&quote.quotee, 100)?)
 	}
@@ -212,7 +214,76 @@ impl SQLdb {
 		Ok(json!({ "status" : "200" }))
 	}
 
-	// pub fn add_card(&self, req_json: Value) -> Result<Value, Box<dyn std::error::Error>> {
-		
-	// }
+	pub fn card_draw(&self) -> Result<Value, EdenErr> {
+		let mut stmt = self.conn.prepare("SELECT prob FROM idprobs WHERE id > 0 AND id < 6 ORDER BY id")?;
+		let weight_rows = stmt.query_map([], |row| {
+			Ok( row.get(0)? )
+		})?;
+		let weights: Vec<f32> = weight_rows.map(|r| r.unwrap_or_default()).collect();
+
+		let mut rng = thread_rng();
+		let dist = WeightedIndex::new(weights.iter())?;
+		let rrank: usize = dist.sample(&mut rng) + 1;
+
+		let card = self.conn.query_row("SELECT * FROM cards WHERE crank = ? ORDER BY RANDOM() LIMIT 1", [&rrank], |row| {
+			Ok(Card{
+				csrc: row.get(0)?,
+				cname: row.get(1)?,
+				crank: row.get(2)?,
+				element: row.get(3)?,
+				atk: row.get(4)?,
+				lufa: row.get(5)?,
+				def: row.get(6)?,
+				lufd: row.get(7)?,
+				utl: row.get(8)?,
+				lufu: row.get(9)?,
+				subjct: row.get(10)?,
+				adder: row.get(11)?,
+				tradable: row.get(12)?,
+			})
+		})?;
+		// TODO: maybe instead of having the struct, just do something here like row.get(x)? as f32
+		Ok(json!({
+			"status" : "200",
+			"csrc" : &card.csrc,
+			"cname" : &card.cname,
+			"crank" : &card.crank,
+			"element" : &card.element,
+			"atk" : &card.atk,
+			"lufa" : &card.lufa,
+			"def" : &card.def,
+			"lufd" : &card.lufd,
+			"utl" : &card.utl,
+			"lufu" : &card.lufu,
+			"subjct" : &card.subjct,
+			"adder" : &card.adder,
+			"tradable" : &card.tradable,
+		}))
+	}
+
+	pub fn card_add(&self, req_json: Value) -> Result<Value, EdenErr> {
+		let c: Card = serde_json::from_value(req_json)?;
+		// Make sure the subject of the card and its adder are registered.
+		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&c.subjct]).unwrap_or_default();
+		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&c.adder]).unwrap_or_default();
+		self.conn.execute(
+			"INSERT INTO cards VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)", 
+			(&c.csrc, &c.cname, &c.crank, &c.element, &c.atk, &c.lufa, &c.def, &c.lufd, &c.utl, 
+			&c.lufu, &c.subjct, &c.adder, &c.tradable))?;
+		Ok(json!({ "status" : "200" }))
+	}
+
+	pub fn item_get(&self, req_json: Value) -> Result<Value, EdenErr> {
+		let i: Item = serde_json::from_value(req_json)?;
+		// TODO: Return everything for now.
+		Ok(json!({ "status" : "200" }))
+	}
+
+	pub fn item_add(&self, req_json: Value) -> Result<Value, EdenErr> {
+		let i: Item = serde_json::from_value(req_json)?;
+		// Make sure the adder is registered.
+		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&i.ownr]).unwrap_or_default();
+		self.conn.execute("INSERT INTO items (src, ownr) VALUES (?1, ?2)", (&i.src, &i.ownr))?;
+		Ok(json!({ "status" : "200" }))
+	}
 }

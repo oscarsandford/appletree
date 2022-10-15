@@ -30,6 +30,7 @@ impl From<distributions::WeightedError> for EdenErr {
 
 #[derive(Deserialize, Debug)]
 pub struct Quote {
+	// TODO: make Strings for discord ids [u8; 30]
 	pub quote: String,
 	pub quotee: String,
 	pub quoter: String,
@@ -47,10 +48,29 @@ pub struct User {
 
 #[derive(Deserialize, Debug)]
 pub struct Card {
+    pub csrc: String,
+    pub cname: String,
+	pub crank: u8,
+	pub element: String,
+	pub atk: u32,
+	pub lufa: f32,
+	pub def: f32,
+	pub lufd: f32,
+	pub utl: u32,
+	pub lufu: f32,
+	// TODO: see above
+    pub subjct: String,
+	pub adder: String,
+	// This could be a bool, but SQLite cannot store bools, so it is an integer either 1 or 0.
+	pub tradable: u8, 
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Item {
+    pub src: String,
     pub ownr: String,
-    pub cid: u32,
-    pub lvl: u16,
-    pub tradable: bool,
+	pub lvl: u16,
+    pub xp: u32,
 }
 
 #[derive(Deserialize, Debug)]

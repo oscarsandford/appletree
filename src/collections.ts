@@ -34,7 +34,23 @@ export interface Quote extends EdenResponse {
 	quote: string,
 	quotee: string,
 	quoter: string,
-	qweight: number
+	qweight: number,
+}
+
+export interface Card extends EdenResponse {
+	csrc: string,
+	cname: string,
+	crank: number,
+	element: string,
+	atk: number,
+	lufa: number,
+	def: number,
+	lufd: number,
+	utl: number,
+	lufu: number,
+	subjct: string,
+	adder: string,
+	tradable: number,
 }
 
 export interface UserData extends EdenResponse {

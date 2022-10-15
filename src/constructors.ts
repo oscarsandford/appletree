@@ -1,5 +1,12 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { TarotCard, TradingCard, UserData } from "./collections";
+import { Card, TarotCard, TradingCard, UserData } from "./collections";
+
+const elemap: Record<string, any> = {
+	"air" : [15844367,":leaves:"],
+	"earth" : [2067276,":herb:"],
+	"fire" : [15548997,	":fire:"],
+	"water" : [3447003,":droplet:"]
+};
 
 export function build_trading_card_embed(tc: TradingCard): [EmbedBuilder, ActionRowBuilder] {
 	/**
@@ -20,8 +27,6 @@ export function build_trading_card_embed(tc: TradingCard): [EmbedBuilder, Action
 		.setTitle(tc.name + " +" + tc.level)
 		.setDescription(":star:".repeat(tc.rank))
 		.setImage(tc.imglink);
-		// .setColor("DARK_GREEN")
-		// .setFooter("August Trading Cards");
 	return [card, row];
 }
 
@@ -51,8 +56,6 @@ export function build_tarot_card_embed(mc: TarotCard, rc: TarotCard, ac: TarotCa
 			}
 		)
 		.setImage(mc.imglink);
-		// .setColor("DARK_RED")
-		// .setFooter("Tavern Arcana");
 }
 
 export function build_button(id: string, label: string, style: ButtonStyle, disabled: boolean): ActionRowBuilder<ButtonBuilder> {
@@ -100,4 +103,32 @@ export function build_user_embed(uname: string, uicon: string, ucolr: number | n
 		)
 		.setImage(udata.bg)
 		.setTimestamp();
+}
+
+export function build_card_embed(card: Card, uicon: string): EmbedBuilder {
+	/**
+	 * Returns an embed for a trading card.
+	 * 
+	 * @param card - The Card data.
+	 * @param uicon - The URL for the user avatar icon.
+	 * 
+	 * @returns The constructed embed.
+	 */
+	let e = "";
+	let c = 0;
+	// Might be able to remove this check? We're just being ultra safe for now.
+	if (card.element === "air" || card.element ===  "earth" || card.element === "fire" || card.element === "water") {
+		e = elemap[card.element][1];
+		c = elemap[card.element][0];
+	}
+	return new EmbedBuilder()
+		.setColor(c)
+		.setTitle(`${e}\t${card.cname}`)
+		.addFields(
+			{ name : "__ATK__", value: `**${card.atk}** *(m.+${card.lufa})*`, inline : true },
+			{ name : "__DEF__", value: `**${card.def}%** *(m.+${card.lufd})*`, inline : true },
+			{ name : "__UTL__", value: `**${card.utl}** *(m.+${card.lufu})*`, inline : true },
+		)
+		.setImage(card.csrc)
+		.setFooter({ text : `${"⭐".repeat(card.crank)}`, iconURL : uicon});
 }

@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits, Interaction, ComponentType, ButtonStyle, Message } from "discord.js";
 import fetch from "node-fetch";
 
-import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, UserData, TradingCard } from "./collections";
-import { build_trading_card_embed, build_tarot_card_embed, build_button, build_user_embed } from "./constructors";
+import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, UserData, TradingCard, Card } from "./collections";
+import { build_trading_card_embed, build_tarot_card_embed, build_button, build_user_embed, build_card_embed } from "./constructors";
 import * as DAPI from "./dapi";
 
 import dotenv from "dotenv";
@@ -219,6 +219,63 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			}
 			else {
 				await interaction.reply({ content : "Something went wrong while updating your profile background.", ephemeral : true });
+			}
+		} break;
+
+		case "card": {
+			const res = await fetch("http://localhost:8080/db/card/draw", {
+				method : "POST",
+				headers : { "Content-Type" : "application/json" },
+				body: JSON.stringify({})
+			});
+
+			const buf = res.body.read();
+			const card: Card = JSON.parse(buf.toString());
+
+			if (card.status && card.status !== "200") {
+				return;
+			}
+			const uicon = await DAPI.get_user_avatar(client, interaction.guild, card.subjct);
+			const embed = build_card_embed(card, uicon);
+			await interaction.reply({ embeds : [embed] });
+		} break;
+
+		case "addcard": {
+			const subject = interaction.options.get("subject")?.user;
+			const name = interaction.options.get("name")?.value;
+			const element = interaction.options.get("element")?.value;
+			const image = interaction.options.get("image")?.value;
+			// Avoid sending anything with bad data. This check is ugly!
+			if (name === undefined || typeof name !== "string" ||
+				element === undefined || typeof element !== "string" ||
+				image === undefined || typeof image !== "string" || subject === undefined
+			) return;
+
+			const body = {
+				"csrc" : image,
+				"cname" : name,
+				"crank" : 3,
+				"element" : element,
+				"atk" : 0,
+				"lufa" : 0.0,
+				"def" : 0.0,
+				"lufd" : 0.0,
+				"utl" : 0,
+				"lufu" : 0.0,
+				"subjct" : subject.id,
+				"adder" : interaction.user.id,
+				"tradable" : 1,
+			};
+
+			const res = await fetch("http://localhost:8080/db/card/add", {
+				method : "POST",
+				headers : { "Content-Type" : "application/json" },
+				body: JSON.stringify(body)
+			});
+			const buf = res.body.read();
+			const eres: EdenResponse = JSON.parse(buf.toString());
+			if (eres.status && eres.status === "200") {
+				await interaction.reply({ content : "Successfully added the card to the database.", ephemeral : true });
 			}
 		} break;
 

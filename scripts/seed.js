@@ -74,12 +74,64 @@ const commands = [
 		]
 	},
 	{
+		'name' : 'card',
+		'description' : 'Draw a random trading card.',
+	},
+	{
+		'name' : 'addcard',
+		'description' : 'Add a card to the database.',
+		'options' : [
+			{
+				'name' : 'subject',
+				'description' : 'The subject of the card.',
+				'type' : 9,
+				'required' : true
+			},
+			{
+				'name' : 'name',
+				'description' : 'The name for the card.',
+				'type' : 3,
+				'required' : true
+			},
+			{
+				'name' : 'element',
+				'description' : 'The elemental affinity of the card.',
+				'type' : 3,
+				'required' : true,
+				'choices': [
+					{
+						'name': 'Air',
+						'value': 'air'
+					},
+					{
+						'name': 'Earth',
+						'value': 'earth'
+					},
+					{
+						'name': 'Fire',
+						'value': 'fire'
+					},
+					{
+						'name': 'Water',
+						'value': 'water'
+					},
+				]
+			},
+			{
+				'name' : 'image',
+				'description' : 'The image URL for the card, ending in a valid image extension (e.g. .jpg).',
+				'type' : 3,
+				'required' : true
+			}
+		]
+	},
+	{
 		'name' : 'background',
 		'description' : 'Set your profile background to an image at a given URL.',
 		'options' : [
 			{
-				'name' : 'url',
-				'description' : 'The image URL.',
+				'name' : 'image',
+				'description' : 'The image URL, ending in a valid image extension (e.g. .jpg).',
 				'type' : 3,
 				'required' : true
 			}
