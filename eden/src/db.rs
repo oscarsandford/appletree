@@ -295,7 +295,7 @@ impl SQLdb {
 					row.get(2)?,
 					i.lvl.to_string(),
 				])
-			}).unwrap();
+			})?;
 			items.push(di);
 		}
 		Ok(json!({ 
@@ -309,12 +309,11 @@ impl SQLdb {
 		// Make sure the adder is registered.
 		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&i.ownr]).unwrap_or_default();
 
-		// TODO:
-		// We should come up with a better idea for leveling up the cards.
-		// I like the accidental constraint of having no duplicates under a single owner, 
-		// so probably getting the same card gives you some xp or something.
-
-		self.conn.execute("INSERT INTO items (src, ownr) VALUES (?1, ?2)", (&i.src, &i.ownr))?;
+		// Increment the item level on insertion if already present, otherwise add it (default lvl is 0).
+		let n = self.conn.execute("UPDATE items SET lvl = lvl + 1 WHERE src = ?1 AND ownr = ?2", (&i.src, &i.ownr))?;
+		if n == 0 {
+			self.conn.execute("INSERT INTO items (src, ownr) VALUES (?1, ?2)", (&i.src, &i.ownr))?;
+		}
 		Ok(json!({ "status" : "200" }))
 	}
 }
