@@ -126,11 +126,11 @@ export function build_card_embed(card: Card, item: Item, uicon: string): EmbedBu
 		.setColor(c)
 		.setTitle(`${e}\t${card.cname}`)
 		.setURL(card.csrc)
-		.setDescription(`LVL ${item.lvl} *(${item.xp}xp)*`)
+		.setDescription(`LVL ${item.lvl}`)
 		.addFields(
-			{ name : "__ATK__", value: `**${card.atk}** *(m.+${card.lufa})*`, inline : true },
-			{ name : "__DEF__", value: `**${card.def}%** *(m.+${card.lufd})*`, inline : true },
-			{ name : "__UTL__", value: `**${card.utl}** *(m.+${card.lufu})*`, inline : true },
+			{ name : "__ATK__", value: `**${card.atk}** *(m.+${card.lufa.toFixed(2)})*`, inline : true },
+			{ name : "__DEF__", value: `**${+card.def.toFixed(1)}%** *(m.+${card.lufd.toFixed(2)})*`, inline : true },
+			{ name : "__UTL__", value: `**${card.utl}** *(m.+${card.lufu.toFixed(2)})*`, inline : true },
 		)
 		.setImage(card.csrc)
 		.setFooter({ text : `${"⭐".repeat(card.crank)}`, iconURL : uicon});
