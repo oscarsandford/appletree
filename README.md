@@ -2,18 +2,16 @@
 
 Appletree is [Applebot](https://github.com/oscarsandford/applebot) upgraded with TypeScript, as well as its own local Rust web server and SQL database called Eden.
 
-## Installation
-Install [`node`](https://nodejs.org/en/) and [`npm`](https://www.npmjs.com/). Clone this repository and, with it as the current working directory, run:
-```
-npm ci
-```
+## Prerequisites
+Install [`node`](https://nodejs.org/en/), [`npm`](https://www.npmjs.com/), and [Rust](https://www.rust-lang.org/).
 
-## Launch
-Eden is first started as a background process, and Applebot is spawned afterwards. There are a few ways to do this:
-* `./launch.sh` checks for a release build of Eden, compiles if necessary, then launches Eden and Apple.
-* `./launch.sh build` forces compilation of a new release build before launch.
+## Build
 
-You may need to make use of `kill` or `pkill`, in order to clean up Eden if the main process exits prematurely.
+See the instructions for building the database files under `eden/db`.
+
+`launch.sh` builds and runs both Apple and Eden. It uses the [`nohup`](https://www.gnu.org/software/coreutils/manual/html_node/nohup-invocation.html#nohup-invocation) command to run Apple and Eden as independent background processes that will persist after logout (e.g. a remote connection). It writes output to log files in their respective directories.
+
+`clean.sh` helps automate cleaning the workspace and copying the project repository to `/tmp` where the `.git` files are then removed. This results in a slim project directory that can be moved around and set up with the launch script. This script will likely be deprecated once Docker is introduced.
 
 ## Seed
 In order to make use of slash commands, you must run the script to register them with Discord's API using the following npm command:
