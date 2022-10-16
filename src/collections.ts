@@ -27,7 +27,7 @@ export interface TarotCard {
 
 export interface EdenResponse {
 	status: string,
-	msg: string,
+	payload: Array<Array<string>>,
 }
 
 export interface Quote extends EdenResponse {
@@ -51,6 +51,13 @@ export interface Card extends EdenResponse {
 	subjct: string,
 	adder: string,
 	tradable: number,
+}
+
+export interface Item extends EdenResponse {
+	src: string,
+	ownr: string,
+	lvl: number,
+	xp: number,
 }
 
 export interface UserData extends EdenResponse {

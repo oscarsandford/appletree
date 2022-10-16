@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits, Interaction, ComponentType, ButtonStyle, Message } from "discord.js";
 import fetch from "node-fetch";
 
-import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, UserData, TradingCard, Card } from "./collections";
-import { build_trading_card_embed, build_tarot_card_embed, build_button, build_user_embed, build_card_embed } from "./constructors";
+import { draw_tarot_cards, draw_trading_card, set_cooldown, EdenResponse, Quote, UserData, TradingCard, Card, Item } from "./collections";
+import { build_trading_card_embed, build_tarot_card_embed, build_button, build_user_embed, build_card_embed, elemap } from "./constructors";
 import * as DAPI from "./dapi";
 
 import dotenv from "dotenv";
@@ -232,12 +232,24 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			const buf = res.body.read();
 			const card: Card = JSON.parse(buf.toString());
 
-			if (card.status && card.status !== "200") {
-				return;
+			if (card.status && card.status === "200") {
+				const uicon = await DAPI.get_user_avatar(client, interaction.guild, card.subjct);
+				const embed = build_card_embed(card, <Item>{lvl : 0, xp : 0}, uicon);
+				await interaction.reply({ embeds : [embed] });
+
+				const body = {
+					"src" : card.csrc,
+					"ownr" : interaction.user.id,
+					"lvl" : 0,
+					"xp" : 0
+				};
+				await fetch("http://localhost:8080/db/item/add", {
+					method : "POST",
+					headers : { "Content-Type" : "application/json" },
+					body: JSON.stringify(body)
+				});
+				// Haha no response!
 			}
-			const uicon = await DAPI.get_user_avatar(client, interaction.guild, card.subjct);
-			const embed = build_card_embed(card, uicon);
-			await interaction.reply({ embeds : [embed] });
 		} break;
 
 		case "addcard": {
@@ -275,12 +287,33 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			const buf = res.body.read();
 			const eres: EdenResponse = JSON.parse(buf.toString());
 			if (eres.status && eres.status === "200") {
-				await interaction.reply({ content : "Successfully added the card to the database.", ephemeral : true });
+				await interaction.reply({ content : `Added a card titled "${name}" depicting ${subject} to the database.`});
 			}
 		} break;
 
 		case "collection": {
-			// View your trading card collection. To be implemented.
+			const body = {
+				"src" : "",
+				"ownr" : interaction.user.id,
+				"lvl" : 0,
+				"xp" : 0
+			}
+			const res = await fetch("http://localhost:8080/db/item", {
+				method : "POST",
+				headers : { "Content-Type" : "application/json" },
+				body: JSON.stringify(body)
+			});
+			const buf = res.body.read();
+			const eres: EdenResponse = JSON.parse(buf.toString());
+			let st = "__Card Collection__\n";
+			if (eres.status && eres.status === "200") {
+				eres.payload.forEach(el => {
+					if (el.length === 4 && (el[2] === "air" || el[2] ===  "earth" || el[2] === "fire" || el[2] === "water")) {
+						st += `(${el[1]}:star:)  ${elemap[el[2]][1]}  LVL ${el[3]} -  *${el[0]}*\n`;
+					}
+				});
+			}
+			await interaction.reply({ content : st });
 		} break;
 	}
 });

@@ -40,7 +40,7 @@ fn handle(buf: &mut [u8]) {
 		"/db/user/bg" => db.set_user_bg(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/card/draw" => db.card_draw().unwrap_or(json!({"status":"500"})),
 		"/db/card/add" => db.card_add(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/item" => db.get_item(body_json).unwrap_or(json!({"status":"500"})),
+		"/db/item" => db.item_get(body_json).unwrap_or(json!({"status":"500"})),
 		"/db/item/add" => db.item_add(body_json).unwrap_or(json!({"status":"500"})),
 		_ => {json!({"status":"404"})},
 	};

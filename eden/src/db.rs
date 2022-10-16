@@ -275,14 +275,45 @@ impl SQLdb {
 
 	pub fn item_get(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let i: Item = serde_json::from_value(req_json)?;
-		// TODO: Return everything for now.
-		Ok(json!({ "status" : "200" }))
+		// Return everything for now (i.e. everything with i.ownr).
+		let mut stmt = self.conn.prepare("SELECT * FROM items WHERE ownr = ?")?;
+		let rows = stmt.query_map([&i.ownr], |row| {
+			Ok(Item {
+				src: row.get(0)?,
+				ownr: row.get(1)?,
+				lvl: row.get(2)?,
+				xp: row.get(3)?,
+			})
+		})?;
+		let mut items = Vec::new();
+		for r in rows {
+			let i = r?;
+			let di = self.conn.query_row("SELECT cname,crank,element FROM cards WHERE csrc = ?", [&i.src], |row| {
+				Ok([
+					row.get(0)?,
+					row.get(1).unwrap_or(0).to_string(),
+					row.get(2)?,
+					i.lvl.to_string(),
+				])
+			}).unwrap();
+			items.push(di);
+		}
+		Ok(json!({ 
+			"status" : "200",
+			"payload" : items,
+		}))
 	}
 
 	pub fn item_add(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let i: Item = serde_json::from_value(req_json)?;
 		// Make sure the adder is registered.
 		self.conn.execute("INSERT INTO users (id) VALUES(?)", [&i.ownr]).unwrap_or_default();
+
+		// TODO:
+		// We should come up with a better idea for leveling up the cards.
+		// I like the accidental constraint of having no duplicates under a single owner, 
+		// so probably getting the same card gives you some xp or something.
+
 		self.conn.execute("INSERT INTO items (src, ownr) VALUES (?1, ?2)", (&i.src, &i.ownr))?;
 		Ok(json!({ "status" : "200" }))
 	}

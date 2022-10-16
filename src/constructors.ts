@@ -1,7 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Card, TarotCard, TradingCard, UserData } from "./collections";
+import { Card, TarotCard, TradingCard, UserData, Item } from "./collections";
 
-const elemap: Record<string, any> = {
+export const elemap: Record<string, any> = {
 	"air" : [15844367,":leaves:"],
 	"earth" : [2067276,":herb:"],
 	"fire" : [15548997,	":fire:"],
@@ -105,11 +105,12 @@ export function build_user_embed(uname: string, uicon: string, ucolr: number | n
 		.setTimestamp();
 }
 
-export function build_card_embed(card: Card, uicon: string): EmbedBuilder {
+export function build_card_embed(card: Card, item: Item, uicon: string): EmbedBuilder {
 	/**
 	 * Returns an embed for a trading card.
 	 * 
 	 * @param card - The Card data.
+	 * @param item - The Item info (for things like level and xp).
 	 * @param uicon - The URL for the user avatar icon.
 	 * 
 	 * @returns The constructed embed.
@@ -124,6 +125,8 @@ export function build_card_embed(card: Card, uicon: string): EmbedBuilder {
 	return new EmbedBuilder()
 		.setColor(c)
 		.setTitle(`${e}\t${card.cname}`)
+		.setURL(card.csrc)
+		.setDescription(`LVL ${item.lvl} *(${item.xp}xp)*`)
 		.addFields(
 			{ name : "__ATK__", value: `**${card.atk}** *(m.+${card.lufa})*`, inline : true },
 			{ name : "__DEF__", value: `**${card.def}%** *(m.+${card.lufd})*`, inline : true },
