@@ -12,10 +12,10 @@ npm ci
 echo -e "\033[91mApple\033[m >> Compiling..."
 tsc
 echo -e "\033[91mApple\033[m >> Startup."
-nohup node dist/index.js & > apple.log
+nohup node dist/index.js &
 # Compile Eden
 cd eden
 echo -e "\033[94mEden\033[m >> Creating a release build..."
 cargo build --release
 echo -e "\033[94mEden\033[m >> Startup."
-nohup target/release/eden & > eden.log
+nohup target/release/eden &
