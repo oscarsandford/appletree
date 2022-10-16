@@ -223,6 +223,10 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 		} break;
 
 		case "card": {
+			if (recency_cache.card.has(interaction.user.id)) {
+				await interaction.reply({ content: "Draw on cooldown.", ephemeral: true });
+				return;
+			}
 			const res = await fetch("http://localhost:8080/db/card/draw", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
@@ -249,6 +253,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 					body: JSON.stringify(body)
 				});
 				// Haha no response!
+				set_cooldown(interaction.user.id, recency_cache.card, 1200000);
 			}
 		} break;
 
