@@ -1,9 +1,9 @@
 mod db;
 mod types;
 
-use tokio::net::TcpListener;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use std::{net::TcpListener, io::{Read, BufReader, Write}};
 use serde_json::{json, Value};
+use chrono::Local;
 
 use db::SQLdb;
 
@@ -17,14 +17,13 @@ fn handle(buf: &mut [u8]) {
 	let path = buflns.first().unwrap_or(&"").split_whitespace().nth(1).unwrap_or("/");
 	let body_json: Value = serde_json::from_str(bodyst).unwrap_or(json!({}));
 
-	// println!("[Eden] req:\n{}\n---\n", &bufst);
-	println!("[Eden] req: ({}) {:?}", path, &body_json);
+	println!("({}) [Eden] req: ({}) {:?}", Local::now(), path, &body_json);
 
 	// I think it's better to open a new connection for each request. Keeps things atomic.
 	let db = match SQLdb::new("db/user.db") {
 		Ok(x) => x,
 		Err(_) => {
-			eprintln!("[Eden] Database connection error. Request handling aborted.");
+			eprintln!("({}) [Eden] Database connection error. Request handling aborted.", Local::now());
 			return;
 		}
 	};
@@ -56,49 +55,34 @@ fn handle(buf: &mut [u8]) {
 			buf[19+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
 			// Having a `0 as u8` instead of `' ' as u8` for the longest time cost so much grief on the front end.
 		}
-		// println!("[Eden] res:\n{}\n---\n", String::from_utf8_lossy(&buf[0..19+res_bytes.len()]));
-		println!("[Eden] res: {}\n", String::from_utf8_lossy(&res_bytes));
+		println!("({}) [Eden] res: {}\n", Local::now(), String::from_utf8_lossy(&res_bytes));
 	}
 
 	// TODO: This should be done in a neater fashion.
 	match db.conn.close() {
 		Ok(_) => {},
 		Err(_) => {
-			eprintln!("[Eden] Database closure error. Request handling aborted.");
+			eprintln!("({}) [Eden] Database closure error. Request handling aborted.", Local::now());
 			return;
 		}
 	};
 }
 
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	println!("[Eden] Listening on 127.0.0.1:8080.");
-	let listener = TcpListener::bind("127.0.0.1:8080").await?;
-
-	loop {
-		let (mut socket, _) = listener.accept().await?;
-
-		tokio::spawn(async move {
-			let mut buf = [0; 1024];
-
-			loop {
-				let n = match socket.read(&mut buf).await {
-					Ok(0) => return,
-					Ok(_) => 1024,
-					Err(e) => {
-						eprintln!("[Eden] Socket read failed: {:?}", e);
-						return;
-					}
-				};
-
+fn main() {
+	if let Ok(listener) = TcpListener::bind("127.0.0.1:8080") {
+		println!("({}) [Eden] Listening on 127.0.0.1:8080.", Local::now());
+		let mut buf = [0u8; 1024];
+		for stream in listener.incoming() {
+			if let Ok(mut stream) = stream {
+				let mut buf_reader = BufReader::new(&mut stream);
+				if let Err(e) = buf_reader.read(&mut buf) {
+					eprintln!("({}) [Eden] Socket read failed: {:?}", Local::now(), e);
+				}
 				handle(&mut buf);
-
-				if let Err(e) = socket.write_all(&buf[0..n]).await {
-					eprintln!("[Eden] Socket write failed: {:?}", e);
-					return;
+				if let Err(e) = stream.write_all(&buf) {
+					eprintln!("({}) [Eden] Socket write failed: {:?}", Local::now(), e);
 				}
 			}
-		});
+		}
 	}
 }

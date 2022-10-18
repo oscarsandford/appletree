@@ -11,11 +11,14 @@ echo -e "\033[91mApple\033[m >> Installing dependencies..."
 npm ci
 echo -e "\033[91mApple\033[m >> Compiling..."
 tsc
-echo -e "\033[91mApple\033[m >> Startup."
-nohup node dist/index.js &
 # Compile Eden
 cd eden
 echo -e "\033[94mEden\033[m >> Creating a release build..."
 cargo build --release
+# Launch Eden and then Apple 
+# (the order is important, as Eden must be up in order to 
+# process requests from Apple)
 echo -e "\033[94mEden\033[m >> Startup."
 nohup target/release/eden &
+echo -e "\033[91mApple\033[m >> Startup."
+nohup node dist/index.js &
