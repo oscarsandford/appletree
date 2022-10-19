@@ -20,5 +20,6 @@ cargo build --release
 # process requests from Apple)
 echo -e "\033[94mEden\033[m >> Startup."
 nohup target/release/eden &
+cd ..
 echo -e "\033[91mApple\033[m >> Startup."
 nohup node dist/index.js &
