@@ -25,7 +25,7 @@ client.on("messageCreate", async (message: Message) => {
 	// Collect 25-35 XP up to once every minute while messaging.
 	if (!recency_cache.msgs.has(message.author.id)) {
 		set_cooldown(message.author.id, recency_cache.msgs, 60000);
-		await fetch("http://localhost:8080/db/user/xp", {
+		await fetch("http://eden:8080/db/user/xp", {
 			method : "POST",
 			headers : { "Content-Type" : "application/json" },
 			body: JSON.stringify({ "query" : (Math.floor(Math.random()*11)+25).toString(), "requester" : message.author.id })
@@ -60,7 +60,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 		} break;
 
 		case "quote": {
-			const res = await fetch("http://localhost:8080/db/quote/draw", {
+			const res = await fetch("http://eden:8080/db/quote/draw", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({})
@@ -87,7 +87,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				"qweight" : 0.5
 			};
 
-			const res = await fetch("http://localhost:8080/db/quote/add", {
+			const res = await fetch("http://eden:8080/db/quote/add", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify(body)
@@ -104,7 +104,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			const requester = interaction.user.id;
 			if (typeof query !== "string") return;
 
-			const res = await fetch("http://localhost:8080/db/quote/find", {
+			const res = await fetch("http://eden:8080/db/quote/find", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : query , "requester" : requester })
@@ -133,7 +133,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			// An interactive button faciliates confirming the action to delete the quote, 
 			// and the button is updated based on Eden's response to the "remove" call.
 
-			const res = await fetch("http://localhost:8080/db/quote/find", {
+			const res = await fetch("http://eden:8080/db/quote/find", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : query , "requester" : requester })
@@ -156,7 +156,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 						if (i.customId === "unquote_confirm" && i.user.id === interaction.user.id) {
 							await i.deferUpdate();
 							
-							const res = await fetch("http://localhost:8080/db/quote/remove", {
+							const res = await fetch("http://eden:8080/db/quote/remove", {
 								method : "POST",
 								headers : { "Content-Type" : "application/json" },
 								body: JSON.stringify({ "query" : quote.quote , "requester" : requester })
@@ -188,7 +188,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 
 		case "profile": {
 			// Returns embed of user info.
-			const res = await fetch("http://localhost:8080/db/user", {
+			const res = await fetch("http://eden:8080/db/user", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : "", "requester" : interaction.user.id })
@@ -207,7 +207,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			const url = interaction.options.get("url")?.value;
 			if (typeof url !== "string") return;
 
-			const res = await fetch("http://localhost:8080/db/user/bg", {
+			const res = await fetch("http://eden:8080/db/user/bg", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({ "query" : url, "requester" : interaction.user.id })
@@ -227,7 +227,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				await interaction.reply({ content: "Draw on cooldown.", ephemeral: true });
 				return;
 			}
-			const res = await fetch("http://localhost:8080/db/card/draw", {
+			const res = await fetch("http://eden:8080/db/card/draw", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify({})
@@ -247,7 +247,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 					"lvl" : 0,
 					"xp" : 0
 				};
-				await fetch("http://localhost:8080/db/item/add", {
+				await fetch("http://eden:8080/db/item/add", {
 					method : "POST",
 					headers : { "Content-Type" : "application/json" },
 					body: JSON.stringify(body)
@@ -284,7 +284,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				"tradable" : 1,
 			};
 
-			const res = await fetch("http://localhost:8080/db/card/add", {
+			const res = await fetch("http://eden:8080/db/card/add", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify(body)
@@ -303,7 +303,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				"lvl" : 0,
 				"xp" : 0
 			}
-			const res = await fetch("http://localhost:8080/db/item", {
+			const res = await fetch("http://eden:8080/db/item", {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
 				body: JSON.stringify(body)

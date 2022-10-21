@@ -1,0 +1,22 @@
+version: "3.4"
+name: appletree
+
+services:
+  eden:
+    image: eden
+    build:
+      context: eden
+      dockerfile: ./Dockerfile
+    volumes:
+      - /db/eden:/db/eden
+    expose:
+      - "8080"
+  apple:
+    image: apple
+    build:
+      context: apple
+      dockerfile: ./Dockerfile
+    depends_on:
+      - eden
+    links:
+      - eden

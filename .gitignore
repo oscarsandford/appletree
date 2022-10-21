@@ -1,8 +1,10 @@
-# Appletree
-node_modules
-dist
+# Apple
+apple/node_modules
+apple/dist
 .env
 # Eden
 eden/target
 eden/data
 eden/db/*.db
+# Misc
+.vscode

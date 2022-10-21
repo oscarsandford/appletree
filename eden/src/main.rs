@@ -20,7 +20,7 @@ fn handle(buf: &mut [u8]) {
 	println!("({}) [Eden] req: ({}) {:?}", Local::now(), path, &body_json);
 
 	// I think it's better to open a new connection for each request. Keeps things atomic.
-	let db = match SQLdb::new("db/user.db") {
+	let db = match SQLdb::new("/db/eden/user.db") {
 		Ok(x) => x,
 		Err(_) => {
 			eprintln!("({}) [Eden] Database connection error. Request handling aborted.", Local::now());
@@ -69,8 +69,8 @@ fn handle(buf: &mut [u8]) {
 }
 
 fn main() {
-	if let Ok(listener) = TcpListener::bind("127.0.0.1:8080") {
-		println!("({}) [Eden] Listening on 127.0.0.1:8080.", Local::now());
+	if let Ok(listener) = TcpListener::bind("0.0.0.0:8080") {
+		println!("({}) [Eden] Listening on 0.0.0.0:8080.", Local::now());
 		let mut buf = [0u8; 1024];
 		for stream in listener.incoming() {
 			if let Ok(mut stream) = stream {
