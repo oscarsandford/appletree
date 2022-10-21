@@ -9,11 +9,48 @@ Install [`node`](https://nodejs.org/en/), [`npm`](https://www.npmjs.com/), and [
 
 See the instructions for building the database files under `eden/db`.
 
-~~`launch.sh` builds and runs both Apple and Eden. It uses the [`nohup`](https://www.gnu.org/software/coreutils/manual/html_node/nohup-invocation.html#nohup-invocation) command to run Apple and Eden as independent background processes that will persist after logout (e.g. a remote connection). It writes output to log files in their respective directories.~~
+## Deploy Locally
 
-~~`clean.sh` helps automate cleaning the workspace and copying the project repository to `/tmp` where the `.git` files are then removed. This results in a slim project directory that can be moved around and set up with the launch script. This script will likely be deprecated once Docker is introduced.~~
+Eventually and hopefully, Docker images will be created and hosted on GitHub that can be pulled from. However, you can clone this repository, navigate to the repository root with the `docker-compose.yml` file, and simply build and run the composition with 
+```
+docker compose up -d
+```
+view logs while running with
+```
+docker compose logs
+```
+and shut it down with 
+```
+docker compose down
+```
 
-With Docker, this setup README will be changed when everything is complete.
+## Deploy Remotely
+
+If you want to deploy this project to a remote host, here's a quick tutorial that is also general purpose:
+* Make sure you can SSH with password-less authentication (i.e. using a SSH key)
+```sh
+ssh-keygen -t rsa        # Do NOT enter a passphrase when prompted!
+ssh-copy-id -i ~/.ssh/my_id.pub user@hostname
+```
+* Use Docker contexts to create a new context (e.g. "`remote_name`") with the remote host, and you can then use it to manage Docker on that machine.
+```sh
+docker context list
+docker context create remote_name --docker "host=ssh//user@hostname"
+docker --context remote_name ps                 # List containers on remote_name context.
+docker-compose --context remote_name up -d      # For composing on remote_name context.
+docker-compose --context remote_name down       # Shut down.
+# In order to view logs, I found that the only way was to switch contexts first.
+docker context use remote_name                  # Use this context.
+docker compose logs                             # View logs for this project (make sure cwd is the repo root).
+```
+* ***Note*** - If you are getting errors about a Docker daemon not running while using the context, you might need to do this so it can run in user mode:
+```sh
+sudo groupadd docker
+sudo usermod -aG docker $(whoami)
+# Log out and then log back in to ensure docker runs with correct perms.
+sudo service docker start
+```
+
 
 ## Seed
 In order to make use of slash commands, you must run the script to register them with Discord's API using the following npm command:
