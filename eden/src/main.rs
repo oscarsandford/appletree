@@ -51,7 +51,7 @@ fn handle(buf: &mut [u8]) {
 		for i in 0..19 {
 			buf[i] = header[i];
 		}
-		for i in 0..1005 {
+		for i in 0..8173 {
 			buf[19+i] = if i < res_bytes.len() { res_bytes[i] } else { ' ' as u8 };
 			// Having a `0 as u8` instead of `' ' as u8` for the longest time cost so much grief on the front end.
 		}
@@ -70,8 +70,8 @@ fn handle(buf: &mut [u8]) {
 
 fn main() {
 	if let Ok(listener) = TcpListener::bind("0.0.0.0:8080") {
-		println!("({}) [Eden] Listening on 0.0.0.0:8080.", Local::now());
-		let mut buf = [0u8; 1024];
+		println!("({}) [Eden] Listening on {:?}", Local::now(), listener.local_addr().unwrap());
+		let mut buf = [0u8; 8192];
 		for stream in listener.incoming() {
 			if let Ok(mut stream) = stream {
 				let mut buf_reader = BufReader::new(&mut stream);
