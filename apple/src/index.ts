@@ -28,10 +28,15 @@ client.on("messageCreate", async (message: Message) => {
 	// Collect 25-35 XP up to once every minute while messaging.
 	if (!recency_cache.msgs.has(message.author.id)) {
 		set_cooldown(message.author.id, recency_cache.msgs, 60000);
+		const body = { 
+			"query" : (Math.floor(Math.random()*11)+25).toString(), 
+			"requester" : message.author.id 
+		};
+		console.log("[Apple] /db/user/xp req body: ", body);
 		const res = await fetch(`${eden}/db/user/xp`, {
 			method : "POST",
 			headers : { "Content-Type" : "application/json" },
-			body: JSON.stringify({ "query" : (Math.floor(Math.random()*11)+25).toString(), "requester" : message.author.id })
+			body: JSON.stringify(body)
 		});
 		const buf = res.body.read();
 		const eres: EdenResponse = JSON.parse(buf.toString());
