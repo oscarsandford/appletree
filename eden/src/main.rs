@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use chrono::Local;
 
 use db::SQLdb;
-
+use crate::types::EdenErr;
 
 fn handle(buf: &mut [u8]) {
 	// Bytes to JSON.
@@ -28,20 +28,25 @@ fn handle(buf: &mut [u8]) {
 		}
 	};
 
-	let res_json: Value = match path {
-		"/db/quote/draw" => db.quote_draw().unwrap_or(json!({"status":"500"})),
-		"/db/quote/find" => db.quote_find(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/quote/add" => db.quote_add(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/quote/remove" => db.quote_remove(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/user" => db.get_user(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/user/xp" => db.set_user_xp(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/user/credit" => db.set_user_credit(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/user/bg" => db.set_user_bg(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/card/draw" => db.card_draw().unwrap_or(json!({"status":"500"})),
-		"/db/card/add" => db.card_add(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/item" => db.item_get(body_json).unwrap_or(json!({"status":"500"})),
-		"/db/item/add" => db.item_add(body_json).unwrap_or(json!({"status":"500"})),
-		_ => {json!({"status":"404"})},
+	let res: Result<Value, EdenErr> = match path {
+		"/db/quote/draw" => db.quote_draw(),
+		"/db/quote/find" => db.quote_find(body_json),
+		"/db/quote/add" => db.quote_add(body_json),
+		"/db/quote/remove" => db.quote_remove(body_json),
+		"/db/user" => db.get_user(body_json),
+		"/db/user/xp" => db.set_user_xp(body_json),
+		"/db/user/credit" => db.set_user_credit(body_json),
+		"/db/user/bg" => db.set_user_bg(body_json),
+		"/db/card/draw" => db.card_draw(),
+		"/db/card/add" => db.card_add(body_json),
+		"/db/item" => db.item_get(body_json),
+		"/db/item/add" => db.item_add(body_json),
+		_ => Ok(json!({"status":"404"})),
+	};
+
+	let res_json: Value = match res {
+		Ok(val) => val,
+		Err(e) => json!({"status":"500","payload" : format!("{e:?}")}),
 	};
 
 	// Write response: overwrite the bytes in the buffer, and pad with zeroes.
@@ -69,8 +74,9 @@ fn handle(buf: &mut [u8]) {
 }
 
 fn main() {
-	if let Ok(listener) = TcpListener::bind("0.0.0.0:8080") {
-		println!("({}) [Eden] Listening on {:?}", Local::now(), listener.local_addr().unwrap());
+	let addr = if cfg!(debug_assertions) {"127.0.0.1:8080"} else {"0.0.0.0:8080"};
+	if let Ok(listener) = TcpListener::bind(addr) {
+		println!("({}) [Eden] Listening on {:?}", Local::now(), addr);
 		let mut buf = [0u8; 8192];
 		for stream in listener.incoming() {
 			if let Ok(mut stream) = stream {
