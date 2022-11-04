@@ -327,7 +327,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			let st = "__Card Collection__\n";
 			if (eres.status && eres.status === "200") {
 				eres.payload.forEach(el => {
-					if (el.length === 4 && (el[2] === "air" || el[2] ===  "earth" || el[2] === "fire" || el[2] === "water")) {
+					if (el.length === 4 && st.length < 1800 && (el[2] === "air" || el[2] ===  "earth" || el[2] === "fire" || el[2] === "water")) {
 						st += `(${el[1]}:star:)  ${elemap[el[2]][1]}  LVL ${el[3]} -  *${el[0]}*\n`;
 					}
 				});

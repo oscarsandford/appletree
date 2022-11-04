@@ -276,27 +276,18 @@ impl SQLdb {
 	pub fn item_get(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let i: Item = serde_json::from_value(req_json)?;
 		// Return everything for now (i.e. everything with i.ownr).
-		let mut stmt = self.conn.prepare("SELECT * FROM items WHERE ownr = ?")?;
+		let mut stmt = self.conn.prepare("SELECT cname,crank,element,lvl FROM cards JOIN items ON cards.csrc = items.src WHERE ownr = ? ORDER BY crank DESC")?;
 		let rows = stmt.query_map([&i.ownr], |row| {
-			Ok(Item {
-				src: row.get(0)?,
-				ownr: row.get(1)?,
-				lvl: row.get(2)?,
-				xp: row.get(3)?,
-			})
+			Ok([
+				row.get(0)?,
+				row.get(1).unwrap_or(0).to_string(),
+				row.get(2)?,
+				row.get(3).unwrap_or(0).to_string(),
+			])
 		})?;
 		let mut items = Vec::new();
 		for r in rows {
-			let i = r?;
-			let di = self.conn.query_row("SELECT cname,crank,element FROM cards WHERE csrc = ?", [&i.src], |row| {
-				Ok([
-					row.get(0)?,
-					row.get(1).unwrap_or(0).to_string(),
-					row.get(2)?,
-					i.lvl.to_string(),
-				])
-			})?;
-			items.push(di);
+			items.push(r?);
 		}
 		Ok(json!({ 
 			"status" : "200",
