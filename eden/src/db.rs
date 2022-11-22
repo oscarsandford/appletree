@@ -4,6 +4,7 @@ use rand::{thread_rng, distributions::WeightedIndex, distributions::Distribution
 
 use crate::types::*;
 
+// TODO: rewrite this to drop the SQLdb methods, instead making them functions that take a Connection as an argument.
 
 pub struct SQLdb {
 	pub conn: Connection

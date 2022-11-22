@@ -1,5 +1,6 @@
 mod db;
 mod types;
+mod tests;
 
 use std::{net::TcpListener, io::{Read, BufReader, Write}};
 use serde_json::{json, Value};
@@ -22,8 +23,8 @@ fn handle(buf: &mut [u8]) {
 	// I think it's better to open a new connection for each request. Keeps things atomic.
 	let db = match SQLdb::new("/db/eden/user.db") {
 		Ok(x) => x,
-		Err(_) => {
-			eprintln!("({}) [Eden] Database connection error. Request handling aborted.", Local::now());
+		Err(e) => {
+			eprintln!("({}) [Eden] Request handling aborted due to database connection error: \n{:?}", Local::now(), e);
 			return;
 		}
 	};
@@ -63,13 +64,8 @@ fn handle(buf: &mut [u8]) {
 		println!("({}) [Eden] res: {}\n", Local::now(), String::from_utf8_lossy(&res_bytes));
 	}
 
-	// TODO: This should be done in a neater fashion.
-	match db.conn.close() {
-		Ok(_) => {},
-		Err(_) => {
-			eprintln!("({}) [Eden] Database closure error. Request handling aborted.", Local::now());
-			return;
-		}
+	if let Err(e) = db.conn.close() {
+		eprintln!("({}) [Eden] Request handling aborted due to database closure error: \n{:?}", Local::now(), e.1);
 	};
 }
 
@@ -77,7 +73,7 @@ fn main() {
 	let addr = if cfg!(debug_assertions) {"127.0.0.1:8080"} else {"0.0.0.0:8080"};
 	if let Ok(listener) = TcpListener::bind(addr) {
 		println!("({}) [Eden] Listening on {:?}", Local::now(), addr);
-		let mut buf = [0u8; 8192];
+		let mut buf = [' ' as u8; 8192];
 		for stream in listener.incoming() {
 			if let Ok(mut stream) = stream {
 				let mut buf_reader = BufReader::new(&mut stream);
