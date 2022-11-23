@@ -21,7 +21,7 @@ const eden = process.env.EDEN || "http://127.0.0.1:8080";
 
 client.on("ready", () => {
 	const env = process.env.NODE_ENV || "dev";
-	console.log("> Appletree has bloomed. Environment: ", env);
+	console.log(`Appletree has bloomed.\n - Environment: ${env}\n - Eden Address: ${eden}`);
 });
 
 client.on("messageCreate", async (message: Message) => {
@@ -32,7 +32,7 @@ client.on("messageCreate", async (message: Message) => {
 			"query" : (Math.floor(Math.random()*11)+25).toString(), 
 			"requester" : message.author.id 
 		};
-		console.log("[Apple] /db/user/xp req body: ", body);
+		console.log("[Apple] /db/user/xp <--", body);
 		const res = await fetch(`${eden}/db/user/xp`, {
 			method : "POST",
 			headers : { "Content-Type" : "application/json" },
@@ -40,7 +40,7 @@ client.on("messageCreate", async (message: Message) => {
 		});
 		const buf = res.body.read();
 		const eres: EdenResponse = JSON.parse(buf.toString());
-		console.log("[Apple] /db/user/xp res: ", eres);
+		console.log("[Apple] /db/user/xp -->", eres);
 	}
 });
 
@@ -258,7 +258,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 					"lvl" : 0,
 					"xp" : 0
 				};
-				console.log("[Apple] /db/item/add req body: ", body);
+				console.log("[Apple] /db/item/add <--", body);
 				const res = await fetch(`${eden}/db/item/add`, {
 					method : "POST",
 					headers : { "Content-Type" : "application/json" },
@@ -266,7 +266,7 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				});
 				const buf = res.body.read();
 				const eres: EdenResponse = JSON.parse(buf.toString());
-				console.log("[Apple] /db/item/add res: ", eres);
+				console.log("[Apple] /db/item/add -->", eres);
 				set_cooldown(interaction.user.id, recency_cache.card, 1200000);
 			}
 		} break;
@@ -324,15 +324,18 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 			});
 			const buf = res.body.read();
 			const eres: EdenResponse = JSON.parse(buf.toString());
-			let st = "__Card Collection__\n";
+			let st = "";
+			let count = 0;
 			if (eres.status && eres.status === "200") {
 				eres.payload.forEach(el => {
 					if (el.length === 4 && st.length < 1800 && (el[2] === "air" || el[2] ===  "earth" || el[2] === "fire" || el[2] === "water")) {
 						st += `(${el[1]}:star:)  ${elemap[el[2]][1]}  LVL ${el[3]} -  *${el[0]}*\n`;
+						count += parseInt(el[3]);
 					}
 				});
 			}
-			await interaction.reply({ content : st });
+			let header = `__Card Collection__ (${count} pulled)\n`;
+			await interaction.reply({ content : header + st });
 		} break;
 	}
 });

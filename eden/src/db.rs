@@ -178,15 +178,20 @@ impl SQLdb {
 				credit: row.get(3)?,
 				bg: row.get(4)?,
 			})
-		})?;
-		Ok(json!({
-			"status" : "200",
-			"id" : &user.id,
-			"lvl" : &user.lvl,
-			"xp" : &user.xp,
-			"credit" : &user.credit,
-			"bg" : &user.bg,
-		}))
+		});
+		match user {
+			Ok(user) => {
+				Ok(json!({
+					"status" : "200",
+					"id" : &user.id,
+					"lvl" : &user.lvl,
+					"xp" : &user.xp,
+					"credit" : &user.credit,
+					"bg" : &user.bg,
+				}))
+			},
+			Err(_) => Ok(json!({ "status" : "404" })),
+		}
 	}
 
 	pub fn set_user_xp(&self, req_json: Value) -> Result<Value, EdenErr> {
