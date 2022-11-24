@@ -5,9 +5,9 @@ Appletree is [Applebot](https://github.com/oscarsandford/applebot) upgraded with
 ## Prerequisites
 Install [`node`](https://nodejs.org/en/), [`npm`](https://www.npmjs.com/), and [Rust](https://www.rust-lang.org/).
 
-## Build
+## Development
 
-See the instructions for building the database files under `eden/db`.
+See the respective READMEs for `eden` and `apple` for more information on each microservice and how to get started developing them. See the instructions for building the database files under `eden/db`.
 
 ## Deploy Locally
 
@@ -27,9 +27,9 @@ docker compose down
 ## Deploy Remotely
 
 If you want to deploy this project to a remote host, here's a quick tutorial that is also general purpose:
-* Make sure you can SSH with password-less authentication (i.e. using a SSH key)
+* Make sure you can SSH with password-less authentication (i.e. using a SSH key). To make it password-less, simply do not enter a passphrase when prompted.
 ```sh
-ssh-keygen -t rsa        # Do NOT enter a passphrase when prompted!
+ssh-keygen -t rsa
 ssh-copy-id -i ~/.ssh/my_id.pub user@hostname
 ```
 * Use Docker contexts to create a new context (e.g. "`remote_name`") with the remote host, and you can then use it to manage Docker on that machine.
@@ -41,7 +41,7 @@ docker-compose --context remote_name up -d      # For composing on remote_name c
 docker-compose --context remote_name down       # Shut down.
 # In order to view logs, I found that the only way was to switch contexts first.
 docker context use remote_name                  # Use this context.
-docker compose logs                             # View logs for this project (make sure cwd is the repo root).
+docker compose logs                             # View logs for this project (with cwd as repo root).
 ```
 * ***Note*** - If you are getting errors about a Docker daemon not running while using the context, you might need to do this so it can run in user mode:
 ```sh
@@ -50,11 +50,3 @@ sudo usermod -aG docker $(whoami)
 # Log out and then log back in to ensure docker runs with correct perms.
 sudo service docker start
 ```
-
-
-## Seed
-In order to make use of slash commands, you must run the script to register them with Discord's API using the following npm command:
-```sh
-npm run seed
-```
-The propagation time may vary, but expect it to take a while, especially when running the global configuration. See `scripts/seed.js` for more info on how to do this.
