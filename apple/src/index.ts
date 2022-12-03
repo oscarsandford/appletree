@@ -53,10 +53,10 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				await interaction.reply({ content: "Draw on cooldown.", ephemeral: true });
 				return;
 			}
+			set_cooldown(interaction.user.id, recency_cache.card, 600000);
 			const trading_card: TradingCard = draw_trading_card();
 			const [card, row] = build_trading_card_embed(trading_card);
 			await interaction.reply({ embeds : [card], components : [] });
-			set_cooldown(interaction.user.id, recency_cache.card, 600000);
 		} break;
 
 		case "drawtarot": {
@@ -64,10 +64,10 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				await interaction.reply({ content: "Tarot draw on cooldown.", ephemeral: true });
 				return;
 			}
+			set_cooldown(interaction.user.id, recency_cache.tarot, 600000);
 			const [mc, rc, ac] = draw_tarot_cards(interaction.user.username);
 			const card = build_tarot_card_embed(mc, rc, ac);
 			await interaction.reply({ embeds : [card] });
-			set_cooldown(interaction.user.id, recency_cache.tarot, 600000);
 		} break;
 
 		case "quote": {
@@ -234,10 +234,12 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 		} break;
 
 		case "card": {
+			console.log("draw card cache (before): ", recency_cache.card);
 			if (recency_cache.card.has(interaction.user.id)) {
 				await interaction.reply({ content: "Draw on cooldown.", ephemeral: true });
 				return;
 			}
+			set_cooldown(interaction.user.id, recency_cache.card, 1200000);
 			const res = await fetch(`${eden}/db/card/draw`, {
 				method : "POST",
 				headers : { "Content-Type" : "application/json" },
@@ -267,8 +269,8 @@ client.on("interactionCreate", async (interaction: Interaction) => {
 				const buf = res.body.read();
 				const eres: EdenResponse = JSON.parse(buf.toString());
 				console.log("[Apple] /db/item/add -->", eres);
-				set_cooldown(interaction.user.id, recency_cache.card, 1200000);
 			}
+			console.log("draw card cache (after): ", recency_cache.card);
 		} break;
 
 		case "addcard": {
