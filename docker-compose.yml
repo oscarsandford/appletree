@@ -4,6 +4,7 @@ name: appletree
 services:
   eden:
     image: eden
+    container_name: eden1
     build:
       context: eden
       dockerfile: ./Dockerfile
@@ -13,6 +14,7 @@ services:
       - "8080"
   apple:
     image: apple
+    container_name: apple1
     build:
       context: apple
       dockerfile: ./Dockerfile

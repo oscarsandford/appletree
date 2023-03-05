@@ -73,7 +73,7 @@ impl SQLdb {
 	pub fn quote_find(&self, req_json: Value) -> Result<Value, EdenErr> {
 		// Make the substring lowercase so that we are matching case in the query.
 		let req: Request = serde_json::from_value(req_json)?;
-		let quote_subst = req.query.replace("\\", "").replace("\"", "").to_lowercase();
+		let quote_subst = req.query.replace("\\", "").replace("\"", "").replace("'", "''").to_lowercase();
 
 		// This is super bad, but I cannot figure out how to format the query params otherwise. 
 		// I don't know if I can trust this query to be sanitized/validated down the pipeline. Fix later.
@@ -126,7 +126,7 @@ impl SQLdb {
 	pub fn quote_remove(&self, req_json: Value) -> Result<Value, EdenErr> {
 		let req: Request = serde_json::from_value(req_json)?;
 		// Make the substring lowercase so that we are matching case in the query.
-		let quote_subst = req.query.replace("\\", "").replace("\"", "").to_lowercase();
+		let quote_subst = req.query.replace("\\", "").replace("\"", "").replace("'", "''").to_lowercase();
 		
 		// This is super bad, but I cannot figure out how to format the query params otherwise. 
 		// I don't know if I can trust this query to be sanitized/validated down the pipeline. Fix later.
